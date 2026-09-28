@@ -1,0 +1,841 @@
+<title>Coope — Infraestrutura financeira para o produtor rural</title>
+
+<style>
+  :root {
+    --paper: #f7f8f4;
+    --paper-2: #fdfdfb;
+    --ink: #111c17;
+    --ink-2: #47564e;
+    --ink-3: #7c8a82;
+    --rule: #dde1d8;
+    --green: #00863d;
+    --green-2: #e6f1e9;
+    --brick: #a8412f;
+    --brick-2: #f7ebe8;
+    --clay: #8a6d2f;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+    --measure: 66ch;
+    --shell: 1080px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0a0f0d;
+      --paper-2: #111815;
+      --ink: #e7eee9;
+      --ink-2: #9daba3;
+      --ink-3: #6b7a72;
+      --rule: #232e29;
+      --green: #35c47f;
+      --green-2: rgba(53, 196, 127, 0.12);
+      --brick: #e08571;
+      --brick-2: rgba(224, 133, 113, 0.11);
+      --clay: #cfa860;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0a0f0d;
+    --paper-2: #111815;
+    --ink: #e7eee9;
+    --ink-2: #9daba3;
+    --ink-3: #6b7a72;
+    --rule: #232e29;
+    --green: #35c47f;
+    --green-2: rgba(53, 196, 127, 0.12);
+    --brick: #e08571;
+    --brick-2: rgba(224, 133, 113, 0.11);
+    --clay: #cfa860;
+  }
+  :root[data-theme="light"] {
+    --paper: #f7f8f4;
+    --paper-2: #fdfdfb;
+    --ink: #111c17;
+    --ink-2: #47564e;
+    --ink-3: #7c8a82;
+    --rule: #dde1d8;
+    --green: #00863d;
+    --green-2: #e6f1e9;
+    --brick: #a8412f;
+    --brick-2: #f7ebe8;
+    --clay: #8a6d2f;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .shell {
+    max-width: var(--shell);
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  h1, h2, h3 { font-family: var(--serif); font-weight: 600; text-wrap: balance; margin: 0; }
+  p { margin: 0; max-width: var(--measure); }
+  .tnum { font-variant-numeric: tabular-nums; }
+
+  .eyebrow {
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0;
+  }
+
+  /* ---------- masthead ---------- */
+  .masthead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .brand { display: flex; align-items: center; gap: 11px; }
+  .brand .lockup { display: block; width: 104px; height: auto; border-radius: 5px; }
+  .brand .tagline {
+    color: var(--ink-3); font-size: 13px; font-style: italic; font-family: var(--serif);
+    padding-left: 11px; border-left: 1px solid var(--rule);
+  }
+  .masthead-meta { display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--ink-3); }
+  .themebtn {
+    font: inherit; font-size: 11.5px; color: var(--ink-3);
+    background: none; border: 1px solid var(--rule); border-radius: 6px;
+    padding: 4px 9px; cursor: pointer;
+  }
+  .themebtn:hover { color: var(--ink); border-color: var(--ink-3); }
+
+  /* ---------- hero ---------- */
+  .hero { padding: 72px 0 60px; border-bottom: 1px solid var(--rule); }
+  .hero h1 {
+    font-size: clamp(34px, 5.4vw, 58px);
+    line-height: 1.04;
+    letter-spacing: -0.025em;
+    max-width: 18ch;
+  }
+  .hero h1 em { font-style: italic; color: var(--green); }
+  .hero .lede {
+    margin-top: 26px;
+    font-size: 17.5px;
+    line-height: 1.62;
+    color: var(--ink-2);
+    max-width: 60ch;
+  }
+
+  .paradox {
+    margin-top: 48px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    border-top: 1px solid var(--rule);
+  }
+  .paradox div {
+    padding: 22px 22px 22px 0;
+    border-right: 1px solid var(--rule);
+  }
+  .paradox div:last-child { border-right: none; }
+  .paradox dt { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+  .paradox dd {
+    margin: 9px 0 0;
+    font-family: var(--serif);
+    font-size: 31px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .paradox dd small { display: block; font-family: var(--sans); font-size: 12.5px; line-height: 1.5; color: var(--ink-3); margin-top: 9px; letter-spacing: 0; font-weight: 400; }
+  /* Precisa vencer `.gap p` e `.paradox dd`, que são mais específicos que uma classe só. */
+  .neg, .fig.neg, .paradox dd.neg { color: var(--brick); }
+  .pos, .fig.pos, .paradox dd.pos { color: var(--green); }
+
+  /* ---------- generic section ---------- */
+  section.band { padding: 66px 0; border-bottom: 1px solid var(--rule); }
+  .band > .shell > header { margin-bottom: 34px; }
+  .band h2 {
+    font-size: clamp(25px, 3.1vw, 33px);
+    line-height: 1.14;
+    letter-spacing: -0.02em;
+    margin-top: 10px;
+  }
+  .band header p { margin-top: 13px; color: var(--ink-2); font-size: 15.5px; }
+
+  /* ---------- lacunas ---------- */
+  .gaps { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); }
+  @media (min-width: 800px) { .gaps { grid-template-columns: repeat(3, 1fr); } }
+  .gap { background: var(--paper-2); padding: 26px 24px; }
+  .gap h3 { font-size: 18px; letter-spacing: -0.01em; }
+  .gap .fig {
+    font-family: var(--serif); font-size: 38px; line-height: 1;
+    letter-spacing: -0.025em; margin: 16px 0 4px;
+  }
+  .gap p { font-size: 13.5px; color: var(--ink-2); line-height: 1.62; margin-top: 12px; }
+  .gap .src { margin-top: 14px; font-size: 11px; color: var(--ink-3); font-family: var(--mono); }
+
+  /* ---------- journey ---------- */
+  .stepper {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    padding-bottom: 26px; border-bottom: 1px solid var(--rule);
+  }
+  .step {
+    font: inherit; font-size: 13px; text-align: left;
+    background: var(--paper-2); color: var(--ink-2);
+    border: 1px solid var(--rule); border-radius: 9px;
+    padding: 10px 13px; cursor: pointer;
+    display: flex; align-items: center; gap: 9px;
+    transition: border-color .18s, color .18s, background .18s;
+  }
+  .step:hover { border-color: var(--ink-3); color: var(--ink); }
+  .step .n {
+    width: 21px; height: 21px; border-radius: 5px; flex: none;
+    display: grid; place-items: center;
+    font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
+    background: var(--rule); color: var(--ink-2);
+  }
+  .step[aria-selected="true"] { border-color: var(--green); background: var(--green-2); color: var(--ink); }
+  .step[aria-selected="true"] .n { background: var(--green); color: #fff; }
+  .step.done .n { background: var(--green); color: #fff; }
+  .step:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+
+  .stage { display: grid; gap: 30px; margin-top: 30px; }
+  @media (min-width: 940px) { .stage { grid-template-columns: 1.25fr 1fr; align-items: start; } }
+
+  .panel h3 { font-size: 22px; letter-spacing: -0.015em; }
+  .panel > p { margin-top: 12px; color: var(--ink-2); font-size: 15px; }
+
+  .readout {
+    margin-top: 24px; display: grid; gap: 1px;
+    background: var(--rule); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden;
+  }
+  @media (min-width: 560px) { .readout { grid-template-columns: repeat(2, 1fr); } }
+  .readout div { background: var(--paper-2); padding: 17px 18px; }
+  .readout dt { font-size: 10.5px; letter-spacing: 0.11em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+  .readout dd {
+    margin: 7px 0 0; font-family: var(--serif); font-size: 25px;
+    line-height: 1.05; letter-spacing: -0.02em;
+  }
+  .readout dd small { display: block; font-family: var(--sans); font-size: 12px; color: var(--ink-3); margin-top: 7px; line-height: 1.5; letter-spacing: 0; }
+
+  .legal {
+    margin-top: 22px; display: flex; gap: 13px;
+    border: 1px solid var(--rule); border-left: 2px solid var(--green);
+    border-radius: 0 9px 9px 0; padding: 15px 17px; background: var(--paper-2);
+  }
+  .legal .norma { font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--green); }
+  .legal p { margin-top: 7px; font-size: 13px; line-height: 1.62; color: var(--ink-2); }
+
+  /* ledger */
+  .ledger { border: 1px solid var(--rule); border-radius: 10px; background: var(--paper-2); overflow: hidden; }
+  .ledger > header {
+    padding: 13px 17px; border-bottom: 1px solid var(--rule);
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  .ledger > header b { font-family: var(--sans); font-size: 12px; font-weight: 600; letter-spacing: 0.02em; }
+  .ledger > header span { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); }
+  .ledger ol { list-style: none; margin: 0; padding: 0; max-height: 430px; overflow-y: auto; }
+  .ledger li { padding: 13px 17px; border-bottom: 1px solid var(--rule); animation: slip .34s ease both; }
+  .ledger li:last-child { border-bottom: none; }
+  .ledger .row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .ledger .ev { font-size: 12.5px; font-weight: 600; }
+  .ledger .hash { font-family: var(--mono); font-size: 10px; color: var(--ink-3); flex: none; }
+  .ledger .det { font-size: 12px; color: var(--ink-2); margin-top: 5px; line-height: 1.58; }
+  .ledger .base { font-size: 11px; color: var(--green); margin-top: 7px; line-height: 1.5; }
+  .ledger .empty { padding: 34px 17px; font-size: 12.5px; color: var(--ink-3); text-align: center; }
+  @keyframes slip { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: none; } }
+
+  /* comparison bars */
+  .bars { margin-top: 22px; display: grid; gap: 15px; }
+  .bar-row .bar-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 12.5px; }
+  .bar-row .bar-head span:last-child { font-family: var(--mono); font-size: 12px; }
+  .track { height: 9px; border-radius: 99px; background: var(--rule); margin-top: 7px; overflow: hidden; }
+  .fill { height: 100%; border-radius: 99px; width: 0; transition: width .85s cubic-bezier(.22,1,.36,1); }
+  .fill.g { background: var(--green); }
+  .fill.b { background: var(--brick); }
+
+  /* ---------- boundary ---------- */
+  .boundary { display: grid; gap: 22px; }
+  @media (min-width: 860px) { .boundary { grid-template-columns: 1fr 1fr; } }
+  .arch { border: 1px solid var(--rule); border-radius: 11px; overflow: hidden; background: var(--paper-2); }
+  .arch > header { padding: 13px 19px; border-bottom: 1px solid var(--rule); font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+  .arch.no > header { background: var(--brick-2); color: var(--brick); }
+  .arch.yes > header { background: var(--green-2); color: var(--green); }
+  .arch .tree { padding: 19px; font-family: var(--mono); font-size: 12px; line-height: 2; color: var(--ink-2); overflow-x: auto; }
+  .arch .tree b { font-weight: 500; }
+  .arch.no .tree b { color: var(--brick); }
+  .arch.yes .tree b { color: var(--green); }
+  .arch > p { padding: 0 19px 19px; font-size: 13px; color: var(--ink-2); line-height: 1.62; }
+
+  /* ---------- limits ---------- */
+  .limits { display: grid; gap: 1px; background: var(--rule); border-top: 1px solid var(--rule); }
+  .limit { background: var(--paper); padding: 20px 0; }
+  @media (min-width: 760px) { .limit { display: grid; grid-template-columns: 250px 1fr; gap: 30px; padding: 22px 0; } }
+  .limit h3 { font-size: 16px; letter-spacing: -0.01em; }
+  .limit p { font-size: 13.5px; color: var(--ink-2); line-height: 1.64; margin-top: 6px; }
+  @media (min-width: 760px) { .limit p { margin-top: 0; } }
+
+  footer.foot { padding: 46px 0 66px; }
+  footer.foot p { font-size: 12px; color: var(--ink-3); line-height: 1.7; max-width: 76ch; }
+  footer.foot p + p { margin-top: 11px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
+</style>
+
+<div class="shell">
+  <div class="masthead">
+    <div class="brand">
+      <img class="lockup" alt="Coope" src="data:image/webp;base64,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" />
+      <span class="tagline">Do agro, para o agro</span>
+    </div>
+    <div class="masthead-meta">
+      <span>Protótipo de demonstração · dados sintéticos</span>
+      <button class="themebtn" id="theme" type="button">Alternar tema</button>
+    </div>
+  </div>
+</div>
+
+<div class="shell">
+  <div class="hero">
+    <h1>O agro resolveu a produtividade. Não resolveu a <em>infraestrutura financeira</em> de quem a sustenta.</h1>
+    <p class="lede">
+      O produtor rural pessoa física responde por parcela expressiva de um setor que move R$ 3,20 trilhões —
+      e administra essa operação com escrituração retroativa, crédito precificado sobre opacidade e quase nenhuma
+      proteção climática. A Coope é a camada que conecta o dado fiscal desse produtor à infraestrutura bancária
+      regulada e ao capital privado.
+    </p>
+
+    <dl class="paradox">
+      <div>
+        <dt>PIB do agronegócio · 2025</dt>
+        <dd class="tnum">R$ 3,20 tri<small>25,13% da economia nacional, acima dos 22,9% de 2024</small></dd>
+      </div>
+      <div>
+        <dt>Inadimplência rural · 1T2026</dt>
+        <dd class="tnum neg">8,8%<small>Maior patamar da série histórica da Serasa Experian</small></dd>
+      </div>
+      <div>
+        <dt>Recuperações judiciais · 2025</dt>
+        <dd class="tnum neg">1.990<small>Recorde absoluto; 853 de produtores pessoa física</small></dd>
+      </div>
+    </dl>
+  </div>
+</div>
+
+<section class="band">
+  <div class="shell">
+    <header>
+      <p class="eyebrow">O diagnóstico</p>
+      <h2>Três lacunas que se reforçam</h2>
+      <p>A deterioração não é apenas um ciclo ruim de preços e juros. É, em parte relevante, uma falha de infraestrutura informacional.</p>
+    </header>
+
+    <div class="gaps">
+      <article class="gap">
+        <h3>Lacuna fiscal</h3>
+        <p class="fig tnum neg">20%</p>
+        <p>
+          O LCDPR é obrigatório acima de R$ 4,8 milhões de receita bruta anual. Quando a escrituração é
+          considerada inidônea ou não é apresentada, o resultado pode ser arbitrado em 20% da receita —
+          independentemente dos custos efetivamente incorridos.
+        </p>
+        <p class="src">IN RFB 1.848/2018 · IN RFB 1.903/2019</p>
+      </article>
+
+      <article class="gap">
+        <h3>Lacuna de crédito</h3>
+        <p class="fig tnum">R$ 534 bi</p>
+        <p>
+          O funding do agro já é majoritariamente privado: o mercado de capitais movimenta mais que o total
+          anunciado no Plano Safra empresarial, e só R$ 113,8 bi do ciclo 2025/26 tinham equalização do Tesouro.
+          O gargalo não é capital — é originação.
+        </p>
+        <p class="src">Boletim CVM do Agronegócio · Plano Safra 2025/26</p>
+      </article>
+
+      <article class="gap">
+        <h3>Lacuna de proteção</h3>
+        <p class="fig tnum neg">3,3%</p>
+        <p>
+          Parcela da área cultivada coberta pelo seguro rural subvencionado em 2025, com execução orçamentária
+          de R$ 565,4 milhões — queda de 47,3% frente a 2024. O risco climático permanece integralmente dentro
+          das propriedades e dos balanços de quem as financia.
+        </p>
+        <p class="src">Ministério da Agricultura · relatório de monitoramento do PPA</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="shell">
+    <header>
+      <p class="eyebrow">A janela</p>
+      <h2>A infraestrutura necessária já existe e está madura</h2>
+      <p>
+        O que mudou entre 2024 e 2026 é que as três peças amadureceram ao mesmo tempo — e a última delas ganhou
+        marco regulatório próprio.
+      </p>
+    </header>
+
+    <div class="gaps">
+      <article class="gap">
+        <h3>Open Finance</h3>
+        <p class="fig tnum pos">154 mi</p>
+        <p>
+          Consentimentos ativos em fevereiro de 2026, com mais de 100 milhões de contas conectadas. Empresas não
+          reguladas acessam as APIs pela infraestrutura de um provedor já credenciado, sem credenciamento próprio
+          junto ao Banco Central.
+        </p>
+        <p class="src">Open Finance Brasil · APIs FAPI / OAuth 2.0</p>
+      </article>
+
+      <article class="gap">
+        <h3>Documento fiscal</h3>
+        <p class="fig tnum pos">90 dias</p>
+        <p>
+          Janela de distribuição do web service <span style="font-family:var(--mono);font-size:12px">NFeDistribuicaoDFe</span>.
+          A base de despesas de custeio de uma propriedade já existe em formato estruturado e auditável do lado do
+          Fisco, antes de qualquer digitação pelo produtor.
+        </p>
+        <p class="src">Nota Técnica 2014.002 · Ambiente Nacional da NF-e</p>
+      </article>
+
+      <article class="gap">
+        <h3>Banking as a Service</h3>
+        <p class="fig tnum pos">nov/2025</p>
+        <p>
+          A Resolução Conjunta BCB/CMN nº 16/2025 deu o primeiro marco regulatório específico para BaaS no Brasil.
+          Dá segurança jurídica — e limites claros — a plataformas que operam sobre licença de terceiros.
+        </p>
+        <p class="src">Res. Conjunta BCB/CMN 16/2025 · Res. BCB 518/2025</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="shell">
+    <header>
+      <p class="eyebrow">O produto · percorra as camadas</p>
+      <h2>De nota fiscal a insumo pago, em cinco camadas</h2>
+      <p>
+        Simulação com um produtor de 2.900 hectares em Mato Grosso, safra 2025/26. Cada camada registra o que
+        aconteceu e sob qual base legal — a trilha à direita é construída conforme você avança.
+      </p>
+    </header>
+
+    <div class="stepper" role="tablist" aria-label="Camadas da plataforma">
+      <button class="step" role="tab" aria-selected="true" data-step="0" type="button"><span class="n">1</span>Ingestão</button>
+      <button class="step" role="tab" aria-selected="false" data-step="1" type="button"><span class="n">2</span>Motor fiscal</button>
+      <button class="step" role="tab" aria-selected="false" data-step="2" type="button"><span class="n">3</span>Dossiê de crédito</button>
+      <button class="step" role="tab" aria-selected="false" data-step="3" type="button"><span class="n">4</span>Originação</button>
+      <button class="step" role="tab" aria-selected="false" data-step="4" type="button"><span class="n">5</span>Liquidação</button>
+    </div>
+
+    <div class="stage">
+      <div class="panel" id="panel" role="tabpanel"></div>
+
+      <div class="ledger">
+        <header>
+          <b>Trilha de auditoria</b>
+          <span id="ledger-count">0 eventos</span>
+        </header>
+        <ol id="ledger"></ol>
+        <p class="empty" id="ledger-empty">Avance pelas camadas para construir a trilha.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="shell">
+    <header>
+      <p class="eyebrow">A fronteira</p>
+      <h2>A linha entre orquestrar recursos e detê-los é técnica antes de ser contratual</h2>
+      <p>
+        Ela está no esquema de contas, não na minuta. É a decisão de arquitetura que precisa preceder qualquer
+        linha de código do módulo financeiro.
+      </p>
+    </header>
+
+    <div class="boundary">
+      <div class="arch no">
+        <header>Arquitetura vedada · conta-bolsão</header>
+        <div class="tree">
+Financiador<br />
+└─ <b>Conta em nome da PLATAFORMA</b> (omnibus)<br />
+&nbsp;&nbsp;&nbsp;└─ saldo agregado de N produtores<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ repasse ao beneficiário
+        </div>
+        <p>
+          A plataforma retém recursos de terceiros em nome próprio e depois os libera. A Resolução Conjunta
+          nº 16/2025 proíbe expressamente, e a Resolução BCB nº 518/2025 prevê encerramento obrigatório de
+          contas usadas dessa forma.
+        </p>
+      </div>
+
+      <div class="arch yes">
+        <header>Arquitetura da Coope · titularidade individualizada</header>
+        <div class="tree">
+Financiador<br />
+└─ <b>Conta em nome do PRODUTOR</b> (CPF do titular)<br />
+&nbsp;&nbsp;&nbsp;└─ na instituição prestadora de BaaS<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ <b>Coope inicia o pagamento</b> sob consentimento
+        </div>
+        <p>
+          O produtor mantém relação contratual direta com a instituição autorizada. A trava de finalidade é regra
+          contratual e de auditoria sobre a conta dele — a Coope nunca é titular, custodiante nem intermediária
+          financeira de fato.
+        </p>
+      </div>
+    </div>
+
+    <div class="legal" style="margin-top:26px">
+      <div>
+        <p class="norma">Por que isso é o centro da tese</p>
+        <p>
+          Nenhum dos enquadramentos aplicáveis — correspondente no País (Res. CMN nº 4.935/2021), tomadora de
+          serviços de BaaS (Res. Conjunta nº 16/2025) ou parceria com corretora registrada — torna a Coope uma
+          instituição financeira. Isso dispensa capital mínimo regulatório e autorização prévia do Banco Central,
+          <strong>desde que</strong> a operação nunca detenha recursos de terceiros em nome próprio. O prazo de
+          adequação de contratos vigentes se encerra em 31/12/2026.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band">
+  <div class="shell">
+    <header>
+      <p class="eyebrow">Honestidade analítica</p>
+      <h2>Os limites da tese</h2>
+      <p>Um documento que apresenta apenas argumentos favoráveis à própria tese tem pouca utilidade analítica.</p>
+    </header>
+
+    <div class="limits">
+      <div class="limit">
+        <h3>Dependência de certificado digital</h3>
+        <p>A captura formal de documentos fiscais exige e-CPF válido ou procuração eletrônica. Para um público de baixa maturidade digital, é fricção real de onboarding — não há atalho técnico que a elimine, apenas processo assistido que a reduza.</p>
+      </div>
+      <div class="limit">
+        <h3>Não existe API única para financiadores</h3>
+        <p>Cada integração com Fiagro ou banco é bilateral, negociada e mantida individualmente. A escalabilidade do lado do funding é linear em relação ao esforço comercial e de engenharia, não exponencial.</p>
+      </div>
+      <div class="limit">
+        <h3>O score ainda não foi testado contra um ciclo</h3>
+        <p>A hipótese de que melhor informação reduz prêmio de risco só se sustenta se a informação for efetivamente preditiva. Isso precisa ser demonstrado com dados de safra reais, e não presumido — ainda mais em um momento de inadimplência recorde.</p>
+      </div>
+      <div class="limit">
+        <h3>Conflito de interesse estrutural</h3>
+        <p>Estruturar o dossiê, originar a operação e eventualmente orientar o produtor são atividades que, reunidas, exigem segregação informacional deliberada. Precisa estar no organograma desde o início, não como remediação posterior.</p>
+      </div>
+      <div class="limit">
+        <h3>O gargalo do cronograma não é software</h3>
+        <p>Até um MVP operacional com módulo fiscal completo e um financiador integrado: 9 a 14 meses. O fator determinante são os ciclos de due diligence e credenciamento junto a provedores de BaaS e financiadores — 60 a 120 dias por parceiro.</p>
+      </div>
+      <div class="limit">
+        <h3>Volatilidade regulatória permanente</h3>
+        <p>O setor passa por revisão normativa intensa desde 2025 — BaaS, Open Finance e regime de corretores de seguro. A arquitetura precisa assumir mudança regulatória como condição de operação, não como evento excepcional.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="foot">
+  <div class="shell">
+    <p>
+      <strong>Protótipo de demonstração.</strong> Todos os dados de produtor, notas fiscais, contas bancárias,
+      financiadores e pagamentos exibidos nesta página são sintéticos e gerados para fins de apresentação.
+      Nenhuma integração real com SEFAZ, Open Finance, provedores de BaaS, Fiagros ou seguradoras está ativa.
+    </p>
+    <p>
+      Este material tem caráter técnico-informativo. Não constitui aconselhamento jurídico, tributário ou de
+      investimento, nem oferta de qualquer produto ou serviço financeiro. Os dados de terceiros citados foram
+      obtidos em fontes públicas e podem ter sido atualizados posteriormente. Recomenda-se validação formal de
+      cada ponto regulatório com assessoria especializada em direito bancário, mercado de capitais e proteção de dados.
+    </p>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    "use strict";
+
+    var brl = function (v) {
+      return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+    };
+
+    var CAMADAS = [
+      {
+        titulo: "Ingestão — o dado nasce fora da plataforma",
+        texto:
+          "A Coope não digita nota nem pede extrato ao produtor. Consulta o Ambiente Nacional da NF-e por certificado digital do titular e lê as contas de três instituições via Open Finance, sob consentimento explícito e revogável.",
+        metricas: [
+          ["Documentos fiscais", "84", "Obtidos por NSU sequencial do web service da SEFAZ"],
+          ["Lançamentos bancários", "83", "Três instituições detentoras, sob consentimento vigente"],
+          ["Cobertura documental", "94,0%", "Movimentações com documento fiscal correspondente"],
+          ["Sem documento", "5", "Resíduo que o fechamento tradicional só revela em dezembro"]
+        ],
+        norma: "LGPD · Base legal por finalidade",
+        legal:
+          "Dados de Open Finance são tratados sob consentimento (art. 7º, I); dados fiscais do LCDPR, sob cumprimento de obrigação legal. A separação por finalidade é requisito de arquitetura, não apenas de política de privacidade.",
+        eventos: [
+          {
+            ev: "Consulta NFeDistribuicaoDFe",
+            det: "84 documentos fiscais recebidos do Ambiente Nacional, autorizados por certificado e-CPF do titular.",
+            base: "Nota Técnica 2014.002 — Ambiente Nacional da NF-e",
+            hash: "af1b25e5"
+          },
+          {
+            ev: "Consentimento Open Finance concedido",
+            det: "Escopos ACCOUNTS_READ e RESOURCES_READ autorizados por 12 meses, revogáveis a qualquer momento.",
+            base: "LGPD art. 7º, I · Manual de APIs (IN BCB nº 615/2025)",
+            hash: "3c90ba17"
+          }
+        ]
+      },
+      {
+        titulo: "Motor fiscal — a armadilha do LCDPR, revertida",
+        texto:
+          "A escrituração deixa de ser um retrato retroativo de dezembro e passa a ser um estado permanente, atualizado a cada nota emitida e a cada liquidação bancária. É o que preserva a janela de planejamento tributário dentro do exercício.",
+        metricas: [
+          ["Receita bruta", "R$ 21,51 mi", "78 lançamentos no registro Q100"],
+          ["Resultado apurado", "R$ 1,88 mi", "Margem de 8,7% no regime de caixa"],
+          ["IR sobre base arbitrada", "R$ 1.183.098", "27,5% sobre 20% da receita bruta — base fictícia"],
+          ["IR sobre resultado real", "R$ 516.702", "Apurado a partir de documento fiscal correspondente"]
+        ],
+        barras: [
+          ["Base arbitrada em 20% da receita", 1183098, 1183098, "b"],
+          ["Resultado efetivamente apurado", 516702, 1183098, "g"]
+        ],
+        destaque: ["Economia tributária no exercício", "R$ 666.396"],
+        norma: "Res. CVM nº 19/2021 — informação, não recomendação",
+        legal:
+          "A plataforma apresenta a posição fiscal apurada do próprio titular a partir dos documentos dele. Não recomenda produto financeiro nem orienta escolha entre alternativas — a distinção define se a atividade exige registro de consultor.",
+        eventos: [
+          {
+            ev: "Arquivo LCDPR gerado",
+            det: "Leiaute com 78 registros Q100 e resultado apurado de R$ 1.878.918, pronto para assinatura ICP-Brasil.",
+            base: "IN RFB nº 1.848/2018",
+            hash: "bfd5c171"
+          }
+        ]
+      },
+      {
+        titulo: "Dossiê — conformidade fiscal vira lastro de crédito",
+        texto:
+          "A ordem das camadas não é arbitrária. O produtor que usa a plataforma para cumprir o LCDPR gera, como subproduto do próprio uso, o histórico verificável que o financiador privado precisa para precificar risco sem depender de garantia real.",
+        metricas: [
+          ["Score Coope", "818", "Faixa A, em escala de 1.000 pontos"],
+          ["Lastro em dado primário", "100%", "Cada fator declara a fonte que o financiador pode auditar"],
+          ["Capacidade de pagamento", "R$ 1.127.351", "60% do resultado apurado, com margem de segurança"],
+          ["Limite sugerido", "R$ 2.600.000", "Contra CPR financeira, não hipoteca de imóvel rural"]
+        ],
+        norma: "Contraparte legível",
+        legal:
+          "O gestor de Fiagro que financia produtores pessoa física enfrenta custo de diligência elevado por operação e ausência de dados padronizados sobre capacidade de pagamento. A resposta natural a essa opacidade é o prêmio de risco.",
+        eventos: [
+          {
+            ev: "Dossiê de crédito empacotado",
+            det: "Score 818 (faixa A), com 100% dos fatores lastreados em dado primário verificável.",
+            base: "Dado derivado da escrituração do titular — não constitui recomendação",
+            hash: "caff6e42"
+          }
+        ]
+      },
+      {
+        titulo: "Originação — taxa nominal não é custo",
+        texto:
+          "O mesmo dossiê é submetido em paralelo a Fiagros, bancos e securitizadoras. A oferta de menor taxa nominal é a de maior custo efetivo total — exatamente a comparação que o produtor não consegue fazer sozinho.",
+        metricas: [
+          ["Contrapartes consultadas", "4", "Três aprovaram; uma recusou por ticket mínimo de mandato"],
+          ["Oferta selecionada", "13,9% a.a.", "Fiagro Terra Capital · CET 15,2% · 12 meses"],
+          ["Time-to-money", "9 horas", "Contra 45 a 60 dias no ciclo de análise tradicional"],
+          ["Garantia exigida", "CPR financeira", "Sem hipoteca de imóvel rural nem registro em cartório"]
+        ],
+        barras: [
+          ["Fiagro Terra Capital — CET 15,2%", 15.2, 18.9, "g"],
+          ["Fiagro Cerrado Invest — CET 16,4%", 16.4, 18.9, "g"],
+          ["Banco Regional — nominal 12,4%, CET 18,9%", 18.9, 18.9, "b"]
+        ],
+        norma: "Res. CVM nº 19/2021 · Res. CMN nº 4.935/2021",
+        legal:
+          "A plataforma apresenta parâmetros objetivos e comparáveis; a escolha é do produtor e fica registrada como ato dele. Recomendar qual produto contratar configuraria consultoria de valores mobiliários sujeita a registro na CVM.",
+        eventos: [
+          {
+            ev: "Dossiê roteado a financiadores",
+            det: "Submissão a 4 contrapartes. Não existe API única de mercado: cada integração é bilateral, sob contrato de correspondente.",
+            base: "Res. CMN nº 4.935/2021 — correspondente no País",
+            hash: "7e441d02"
+          },
+          {
+            ev: "Oferta selecionada pelo titular",
+            det: "Fiagro Terra Capital Agro — 13,9% a.a. (CET 15,2%), 12 meses, com trava de finalidade em insumo.",
+            base: "Res. CVM nº 19/2021 — sem recomendação de produto",
+            hash: "90cbe1dc"
+          }
+        ]
+      },
+      {
+        titulo: "Liquidação — o dinheiro nunca passa pela Coope",
+        texto:
+          "A conta de pagamento é aberta em nome do produtor na instituição prestadora de BaaS. A Coope atua apenas como iniciadora de transação sob consentimento do titular, e a trava de finalidade é regra contratual sobre a conta dele — nunca um cofre da plataforma.",
+        metricas: [
+          ["Titular da conta", "CPF do produtor", "Relação contratual direta com a instituição autorizada"],
+          ["Desembolsado", "R$ 2.400.000", "Creditado diretamente pelo financiador na conta do titular"],
+          ["Destinação comprovada", "100%", "Três pagamentos Pix com identificador E2E rastreável"],
+          ["Papel da Coope", "Iniciadora", "Nunca titular, custodiante ou intermediária financeira"]
+        ],
+        norma: "Res. Conjunta BCB/CMN nº 16/2025 · Res. BCB nº 518/2025",
+        legal:
+          "A norma exige titularidade individualizada do cliente final, fluxo financeiro direto e veda contas concentradoras. A regulamentação foi acelerada após investigações federais identificarem uso de contas-bolsão para mascarar transações ilícitas — o regulador está com atenção reforçada exatamente sobre esta camada.",
+        eventos: [
+          {
+            ev: "Conta aberta em nome do titular",
+            det: "Conta de pagamento de titularidade do produtor na instituição prestadora. A Coope não é titular nem custodia recursos.",
+            base: "Res. Conjunta nº 16/2025 — titularidade individualizada",
+            hash: "1fa07c63"
+          },
+          {
+            ev: "Pagamentos sob trava de finalidade",
+            det: "Três Pix da conta do titular: Mosaic R$ 1.080.000, Syngenta R$ 820.000 e Boa Safra R$ 500.000.",
+            base: "Iniciação sob consentimento — a plataforma nunca detém os recursos",
+            hash: "e0a32224"
+          },
+          {
+            ev: "Destinação integral comprovada",
+            det: "100% do valor desembolsado liquidado em beneficiários previstos na finalidade, com trilha completa disponível ao financiador.",
+            base: "Circular BCB nº 3.978/2020 — guarda de registros por 10 anos",
+            hash: "5b7c9e40"
+          }
+        ]
+      }
+    ];
+
+    var panel = document.getElementById("panel");
+    var ledger = document.getElementById("ledger");
+    var ledgerEmpty = document.getElementById("ledger-empty");
+    var ledgerCount = document.getElementById("ledger-count");
+    var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+    var maxVisto = -1;
+
+    function esc(s) {
+      return String(s).replace(/[&<>"]/g, function (c) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c];
+      });
+    }
+
+    function render(i) {
+      var c = CAMADAS[i];
+      var html = "<h3>" + esc(c.titulo) + "</h3><p>" + esc(c.texto) + "</p>";
+
+      html += '<dl class="readout">';
+      c.metricas.forEach(function (m) {
+        html +=
+          "<div><dt>" + esc(m[0]) + '</dt><dd class="tnum">' + esc(m[1]) +
+          "<small>" + esc(m[2]) + "</small></dd></div>";
+      });
+      html += "</dl>";
+
+      if (c.destaque) {
+        html +=
+          '<div class="readout" style="grid-template-columns:1fr;margin-top:1px">' +
+          '<div style="background:var(--green-2)"><dt style="color:var(--green)">' +
+          esc(c.destaque[0]) +
+          '</dt><dd class="tnum" style="color:var(--green);font-size:31px">' +
+          esc(c.destaque[1]) +
+          "</dd></div></div>";
+      }
+
+      if (c.barras) {
+        html += '<div class="bars">';
+        c.barras.forEach(function (b) {
+          html +=
+            '<div class="bar-row"><div class="bar-head"><span>' + esc(b[0]) +
+            '</span></div><div class="track"><div class="fill ' + b[3] +
+            '" data-w="' + (b[1] / b[2]) * 100 + '"></div></div></div>';
+        });
+        html += "</div>";
+      }
+
+      html +=
+        '<div class="legal"><div><p class="norma">' + esc(c.norma) +
+        '</p><p>' + esc(c.legal) + "</p></div></div>";
+
+      panel.innerHTML = html;
+
+      requestAnimationFrame(function () {
+        Array.prototype.forEach.call(panel.querySelectorAll(".fill"), function (f) {
+          f.style.width = f.getAttribute("data-w") + "%";
+        });
+      });
+    }
+
+    function acumularEventos(ate) {
+      var todos = [];
+      for (var k = 0; k <= ate; k++) {
+        CAMADAS[k].eventos.forEach(function (e) {
+          todos.push(e);
+        });
+      }
+      ledger.innerHTML = todos
+        .slice()
+        .reverse()
+        .map(function (e) {
+          return (
+            '<li><div class="row"><span class="ev">' + esc(e.ev) +
+            '</span><span class="hash">' + esc(e.hash) +
+            '</span></div><p class="det">' + esc(e.det) +
+            '</p><p class="base">' + esc(e.base) + "</p></li>"
+          );
+        })
+        .join("");
+      ledgerEmpty.style.display = todos.length ? "none" : "block";
+      ledgerCount.textContent = todos.length + (todos.length === 1 ? " evento" : " eventos");
+    }
+
+    function ir(i) {
+      steps.forEach(function (s, k) {
+        s.setAttribute("aria-selected", k === i ? "true" : "false");
+        if (k <= maxVisto) s.classList.add("done");
+      });
+      render(i);
+      if (i > maxVisto) maxVisto = i;
+      steps.forEach(function (s, k) {
+        if (k <= maxVisto) s.classList.add("done");
+      });
+      acumularEventos(maxVisto);
+    }
+
+    steps.forEach(function (s) {
+      s.addEventListener("click", function () {
+        ir(parseInt(s.getAttribute("data-step"), 10));
+      });
+    });
+
+    ir(0);
+
+    // tema
+    var btn = document.getElementById("theme");
+    btn.addEventListener("click", function () {
+      var atual =
+        document.documentElement.getAttribute("data-theme") ||
+        (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", atual === "dark" ? "light" : "dark");
+    });
+  })();
+</script>

@@ -1,0 +1,12 @@
+# Documentos internos: o Lean Canvas é confidencial e o relatório técnico
+# não deve ir para um repositório público.
+documents/
+
+node_modules/
+.next/
+out/
+.env*
+*.log
+.DS_Store
+.agents/
+.claude/
