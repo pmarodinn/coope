@@ -50,7 +50,7 @@ export default function Credito() {
     });
     setEscolhida(id);
     setEscolhendo(null);
-    router.push("/conta");
+    router.push("/app/conta");
   }
 
   if (!d) {

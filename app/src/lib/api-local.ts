@@ -1,6 +1,6 @@
 import type { Resposta } from "./servicos";
 import * as s from "./servicos";
-import { estado } from "./store";
+import { estado, semear } from "./store";
 
 /**
  * Atendimento local das rotas de API, para o build estático.
@@ -27,6 +27,10 @@ const ROTAS: Record<string, Manipulador> = {
   "GET /api/openfinance/transacoes": () => s.lerTransacoes(),
 
   "POST /api/reset": () => s.zerar(),
+  "POST /api/semear": () => {
+    semear();
+    return { status: 200, corpo: { ok: true } };
+  },
   "POST /api/certificado": () => s.vincularCertificado(),
   "POST /api/fiscal/lcdpr": () => s.gerarArquivoLCDPR(),
   "POST /api/credito/dossie": () => s.empacotarDossie(),
@@ -75,7 +79,14 @@ export function instalarApiLocal() {
   if (instalado || typeof window === "undefined") return;
   instalado = true;
 
-  restaurar();
+  // Primeira visita da sessão abre com a jornada já andada; "R$ 0" na abertura
+  // faz um app financeiro parecer vazio.
+  if (sessionStorage.getItem(CHAVE)) restaurar();
+  else {
+    semear();
+    salvar();
+  }
+
   const original = window.fetch.bind(window);
 
   window.fetch = async (entrada: RequestInfo | URL, init?: RequestInit) => {

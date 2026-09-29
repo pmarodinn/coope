@@ -236,7 +236,9 @@ export default function Conversa() {
         </p>
       </div>
 
-      <div className="flex min-h-[380px] flex-1 flex-col gap-2.5 rounded-card bg-surface p-4">
+      {/* A conversa rola dentro do próprio quadro. Sem isto o conteúdo
+          transborda e escreve por cima do rodapé quando o roteiro cresce. */}
+      <div className="scroll-thin flex min-h-[380px] flex-1 flex-col gap-2.5 overflow-y-auto rounded-card bg-surface p-4">
         {bolhas.length === 0 && !digitando && (
           <p className="m-auto max-w-[240px] text-center text-[13px] leading-relaxed text-faint">
             {perfil ? "Toque em reproduzir para ver a conversa." : "Analisando o perfil…"}

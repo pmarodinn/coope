@@ -11,7 +11,10 @@ import {
   useTransform,
   type MotionValue,
 } from "motion/react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+
+/** useLayoutEffect avisa no servidor, onde de todo modo não roda. */
+const useIsomorphicLayoutEffect = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
 /** Mola única para toda a página: um material só se comporta de um jeito. */
 export const MOLA = { type: "spring", stiffness: 140, damping: 22, mass: 0.9 } as const;
@@ -80,7 +83,15 @@ export function RevealText({
 
 /* ---------------- números ---------------- */
 
-/** Só conta quando entra na tela — um número que já rodou não comunica nada. */
+/**
+ * Conta ao entrar na tela, mas o markup já nasce com o valor certo.
+ *
+ * Isto não é detalhe: se o valor de partida fosse zero, o HTML servido traria
+ * "0,00%" — e é isso que veem os robôs de prévia de link, quem imprime a
+ * página e quem está sem JavaScript. Num site que pede dinheiro, uma tabela de
+ * zeros parece sistema quebrado. O zero entra depois da montagem, num efeito de
+ * layout que roda antes da primeira pintura, então ninguém vê o número piscar.
+ */
 export function Contador({
   valor,
   prefixo = "",
@@ -98,15 +109,37 @@ export function Contador({
   const visivel = useInView(ref, { once: true, margin: "-20% 0px" });
   const reduz = useReducedMotion();
 
+  const [exibido, setExibido] = useState(valor);
+  const [pronto, setPronto] = useState(false);
+
+  useIsomorphicLayoutEffect(() => {
+    if (reduz) return;
+    setExibido(0);
+    setPronto(true);
+  }, [reduz]);
+
+  useEffect(() => {
+    if (visivel) setExibido(valor);
+  }, [visivel, valor]);
+
+  // Impressão não rola a página, então o que estiver fora da tela ficaria em
+  // zero no PDF. Antes de imprimir, todo contador assume o valor final.
+  useEffect(() => {
+    const aoImprimir = () => setExibido(valor);
+    window.addEventListener("beforeprint", aoImprimir);
+    return () => window.removeEventListener("beforeprint", aoImprimir);
+  }, [valor]);
+
   return (
     <span ref={ref} className={className}>
       {prefixo}
       <NumberFlow
-        value={visivel || reduz ? valor : 0}
+        value={exibido}
         format={{ minimumFractionDigits: casas, maximumFractionDigits: casas }}
         locales="pt-BR"
-        transformTiming={{ duration: reduz ? 0 : 1100, easing: "cubic-bezier(.22,1,.36,1)" }}
-        spinTiming={{ duration: reduz ? 0 : 1100, easing: "cubic-bezier(.22,1,.36,1)" }}
+        animated={pronto && !reduz}
+        transformTiming={{ duration: 1100, easing: "cubic-bezier(.22,1,.36,1)" }}
+        spinTiming={{ duration: 1100, easing: "cubic-bezier(.22,1,.36,1)" }}
         willChange
       />
       {sufixo}

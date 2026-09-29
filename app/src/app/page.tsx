@@ -1,295 +1,859 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Broadcast,
+  Buildings,
+  CurrencyCircleDollar,
+  FileText,
+  Lightning,
+  Lock,
+  Plant,
+  Receipt,
+  ShieldCheck,
+  Warning,
+} from "@phosphor-icons/react";
+import { motion, useScroll, useSpring, useTransform, useReducedMotion } from "motion/react";
 import Link from "next/link";
-import { Atalho, Barra, Botao, Chip, Divisor, Icone, Linha, Tile, Titulo } from "@/components/ui";
-import { brl } from "@/lib/engine";
-import type { Compromissos, MesProjetado } from "@/lib/projecao";
-import type { Movimento } from "@/lib/store";
-import { PRODUTOR } from "@/lib/seed";
+import { useEffect, useRef, useState } from "react";
+import { asset } from "@/lib/asset";
+import { Fluxo } from "@/components/site/fluxo";
+import { GrassField } from "@/components/site/grass-field";
+import { Marquise, TextoScroll } from "@/components/site/texto-scroll";
+import {
+  BarraProgresso,
+  CartaoVivo,
+  Contador,
+  Magnetico,
+  MOLA_SUAVE,
+  Reveal,
+  RevealText,
+} from "@/components/site/motion-bits";
 
-interface Resumo {
-  conta: { saldo: number; aberta: boolean; agencia: string; numero: string };
-  credito: Compromissos;
-  projecao: MesProjetado[];
-  imposto: { economia: number; aPagar: number; semOrganizar: number };
-  movimentos: Movimento[];
+/* ================================================================
+   Dados. Tudo aqui sai do White Paper e do Relatório Técnico v2.
+   ================================================================ */
+
+const SINAIS = [
+  { valor: 25.13, sufixo: "%", casas: 2, legenda: "do PIB brasileiro veio do agro em 2025", fonte: "Cepea/Esalq-USP e CNA" },
+  { valor: 8.8, sufixo: "%", casas: 1, legenda: "de inadimplência rural, recorde da série", fonte: "Serasa Experian, 1T2026" },
+  { valor: 1990, sufixo: "", casas: 0, legenda: "recuperações judiciais no agro em um ano", fonte: "Serasa Experian, 2025" },
+];
+
+const LACUNAS = [
+  {
+    id: "fiscal",
+    icone: FileText,
+    titulo: "Fiscal",
+    frase: "A conformidade chega tarde demais.",
+    corpo:
+      "O Livro Caixa Digital é obrigatório acima de R$ 4,8 milhões de receita, mas a escrituração é terceirizada e retroativa. Quando o número aparece, o exercício já fechou — e a janela de planejamento passou.",
+    numero: "20%",
+    numeroLegenda: "Arbitramento sobre a receita bruta quando a escrituração é considerada inidônea.",
+  },
+  {
+    id: "credito",
+    icone: CurrencyCircleDollar,
+    titulo: "Crédito",
+    frase: "O capital já é privado. A originação não acompanhou.",
+    corpo:
+      "Dos R$ 516,2 bilhões do Plano Safra empresarial, apenas R$ 113,8 bilhões tinham equalização do Tesouro. O mercado de capitais do agro move R$ 534 bilhões — e o produtor chega nele sem dado estruturado.",
+    numero: "204%",
+    numeroLegenda: "Crescimento dos Fiagros entre março de 2023 e março de 2025.",
+  },
+  {
+    id: "protecao",
+    icone: ShieldCheck,
+    titulo: "Proteção",
+    frase: "O risco climático fica inteiro dentro da porteira.",
+    corpo:
+      "O seguro rural subvencionado cobriu 3,3% da área cultivada em 2025, com execução 47,3% menor que em 2024. Para 2026, a projeção recua para 2,78%. O risco não sai da propriedade — e nem do balanço de quem a financia.",
+    numero: "3,3%",
+    numeroLegenda: "Da área plantada nacional teve seguro subvencionado em 2025.",
+  },
+];
+
+const JANELA = [
+  {
+    icone: Broadcast,
+    titulo: "Open Finance maduro",
+    corpo:
+      "154 milhões de consentimentos ativos em fevereiro de 2026, o maior ecossistema do mundo. APIs FAPI padronizadas, com portabilidade de crédito 100% digital.",
+    destaque: "154 mi",
+    destaqueLegenda: "consentimentos ativos",
+  },
+  {
+    icone: Receipt,
+    titulo: "Nota fiscal na origem",
+    corpo:
+      "O web service NFeDistribuicaoDFe entrega ao titular todo documento emitido contra o CPF dele. A base de custeio da fazenda já existe estruturada — do lado do Fisco, antes de qualquer digitação.",
+    destaque: "90 dias",
+    destaqueLegenda: "de janela de distribuição",
+  },
+  {
+    icone: Lock,
+    titulo: "BaaS com marco próprio",
+    corpo:
+      "A Resolução Conjunta nº 16, de novembro de 2025, é o primeiro marco de Banking as a Service do país. Exige conta de titularidade do cliente final e veda contas-bolsão.",
+    destaque: "31/12/2026",
+    destaqueLegenda: "prazo de adequação dos contratos",
+  },
+];
+
+const CAMADAS = [
+  {
+    n: "01",
+    nome: "Ingestão",
+    corpo: "Nota fiscal eletrônica pela SEFAZ e extratos multi-instituição sob consentimento.",
+    fonte: "SEFAZ · Open Finance",
+  },
+  {
+    n: "02",
+    nome: "Motor fiscal",
+    corpo: "Conciliação extrato ↔ nota, classificação automática e apuração em tempo real.",
+    fonte: "LCDPR contínuo",
+  },
+  {
+    n: "03",
+    nome: "Dossiê de crédito",
+    corpo: "Capacidade de pagamento verificável, derivada do histórico fiscal e transacional.",
+    fonte: "Lastro auditável",
+  },
+  {
+    n: "04",
+    nome: "Liquidação",
+    corpo: "Conta de titularidade do produtor em instituição autorizada, com Pix e trava de finalidade.",
+    fonte: "Res. Conjunta 16/2025",
+  },
+  {
+    n: "05",
+    nome: "Conformidade",
+    corpo: "KYC, PLD/FT calibrado à sazonalidade da safra, trilha imutável e guarda de 10 anos.",
+    fonte: "Circular BCB 3.978/2020",
+  },
+];
+
+const TELAS = [
+  { src: "/shots/inicio.png", titulo: "Saldo e projeção", corpo: "O produtor abre no saldo, não em relatório." },
+  { src: "/shots/imposto.png", titulo: "Imposto em tempo real", corpo: "R$ 666 mil de diferença entre organizar e não organizar." },
+  { src: "/shots/credito.png", titulo: "Ofertas comparadas", corpo: "Custo total, não a taxa da propaganda." },
+  { src: "/shots/conversa.png", titulo: "Agente no WhatsApp", corpo: "Recomenda o que pode e explica o que não pode indicar." },
+  { src: "/shots/cooperativa.png", titulo: "Visão da cooperativa", corpo: "Sell-out sem carregar risco de crédito." },
+];
+
+const RECEITA = [
+  { nome: "Take rate", detalhe: "1% a 3% sobre o crédito originado", peso: 47, ativo: true },
+  { nome: "Success fee", detalhe: "Percentual sobre a economia tributária comprovada", peso: 46, ativo: true },
+  { nome: "Rebate", detalhe: "Corretagem repassada por parceiro registrado", peso: 7, ativo: true },
+  { nome: "Float", detalhe: "Zerado por desenho — com conta do produtor, o rendimento é dele", peso: 0, ativo: false },
+];
+
+/**
+ * Memória de cálculo de uma cooperativa. Um total de receita com etiqueta de
+ * "simulado" faz o leitor duvidar do resto; premissas à vista ele confere.
+ */
+const CONTA_COOP = [
+  { rotulo: "Produtores na cooperativa", valor: "184" },
+  { rotulo: "Custeio médio por safra", valor: "R$ 1,5 mi" },
+  { rotulo: "Take rate sobre o crédito", valor: "2%" },
+  { rotulo: "Receita por produtor, no crédito", valor: "R$ 30 mil" },
+  { rotulo: "Economia de imposto média", valor: "R$ 285 mil" },
+  { rotulo: "Success fee sobre a economia", valor: "10%" },
+  { rotulo: "Receita por produtor, no imposto", valor: "R$ 28,5 mil" },
+  { rotulo: "Por produtor, no ano", valor: "R$ 58,5 mil", forte: true },
+  { rotulo: "× 184 produtores, só crédito e imposto", valor: "R$ 10,8 mi/ano", forte: true },
+];
+
+const FOSSOS = [
+  {
+    icone: Plant,
+    titulo: "O histórico não se compra",
+    corpo: "Depende do certificado digital de cada produtor e de meses de notas acumuladas.",
+  },
+  {
+    icone: Buildings,
+    titulo: "Fica entre o produtor e o fundo",
+    corpo: "Quem organiza os pedidos decide qual financiador enxerga qual operação primeiro.",
+  },
+  {
+    icone: Lightning,
+    titulo: "A cooperativa traz o produtor",
+    corpo: "Ela ganha vendendo insumo sem financiar ninguém, e por isso indica a Coope ao associado.",
+  },
+  {
+    icone: ShieldCheck,
+    titulo: "Conformidade desde a origem",
+    corpo: "Quem desenhou conta-bolsão terá que refazer a arquitetura até dezembro de 2026.",
+  },
+];
+
+const LIMITES = [
+  "Nada aqui substitui validação de mercado. O protótipo demonstra a tese, não a comprova.",
+  "O gargalo do cronograma não é engenharia: é credenciamento em BaaS e financiadores, de 60 a 120 dias por parceiro.",
+  "A dependência de certificado digital do produtor é fricção real de aquisição, sem contorno técnico.",
+  "Com contas individualizadas, a receita de float deixa de existir. O modelo precisa fechar sem ela.",
+];
+
+/* ================================================================ */
+
+function Secao({
+  children,
+  className = "",
+  id,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  id?: string;
+}) {
+  return (
+    <section id={id} className={`relative px-6 md:px-10 ${className}`}>
+      <div className="mx-auto w-full max-w-[1180px]">{children}</div>
+    </section>
+  );
 }
 
-const compacto = (v: number) =>
-  Math.abs(v) >= 1_000_000
-    ? `${(v / 1_000_000).toFixed(1).replace(".", ",")} mi`
-    : `${Math.round(v / 1000)} mil`;
+/* ---------------- dobra ---------------- */
 
-export default function Inicio() {
-  const [r, setR] = useState<Resumo | null>(null);
-
-  useEffect(() => {
-    fetch("/api/resumo")
-      .then((x) => x.json())
-      .then(setR);
-  }, []);
-
-  if (!r) {
-    return (
-      <div className="space-y-4 pt-2">
-        <div className="h-36 animate-pulse rounded-card bg-surface" />
-        <div className="h-44 animate-pulse rounded-card bg-surface" />
-        <div className="h-40 animate-pulse rounded-card bg-surface" />
-      </div>
-    );
-  }
-
-  const primeiroNome = PRODUTOR.nome.split(" ")[0];
-  const { conta, credito, projecao, imposto } = r;
-  const temCredito = credito.financiado > 0;
-
-  const picoGasto = Math.max(...projecao.map((p) => Math.max(p.gasto, p.entrada)), 1);
-  const gastoPrevisto = projecao.filter((p) => p.previsto).reduce((s, p) => s + p.gasto, 0);
-  const entradaPrevista = projecao.filter((p) => p.previsto).reduce((s, p) => s + p.entrada, 0);
+function Dobra() {
+  const ref = useRef<HTMLDivElement>(null);
+  const reduz = useReducedMotion();
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
+  const y = useTransform(scrollYProgress, [0, 1], [0, 140]);
+  const fade = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
 
   return (
-    <div className="space-y-5 pt-1">
-      <p className="px-1 text-[15px] text-muted">
-        Olá, <span className="font-semibold text-ink">{primeiroNome}</span>
-      </p>
+    <div ref={ref} className="relative min-h-[100dvh] overflow-hidden">
+      <GrassField className="absolute inset-x-0 bottom-0 top-0 h-full w-full" />
 
-      {/* 1. Saldo */}
-      <Tile className="rise p-5">
-        <p className="text-[13px] font-medium text-muted">Saldo na conta</p>
-        <p className="figure mt-1.5 text-ink">{brl(conta.saldo)}</p>
-        {conta.aberta ? (
-          <div className="mt-3 flex items-center gap-2">
-            <Chip tom="bom">Pix ativo</Chip>
-            <span className="text-[12px] text-faint">
-              {conta.agencia} · {conta.numero}
-            </span>
-          </div>
-        ) : (
-          <div className="mt-4">
-            <Link href="/abrir-conta">
-              <Botao largura="cheia">Abrir minha conta</Botao>
-            </Link>
-          </div>
-        )}
-      </Tile>
+      {/* Duas máscaras: o topo abre espaço para o menu, a base para a
+          manchete. Entre as duas fica a faixa em que a crista aparece. */}
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(5,16,11,0.92)_0%,rgba(5,16,11,0.55)_12%,transparent_26%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,#05100b_0%,rgba(5,16,11,0.94)_30%,rgba(5,16,11,0.72)_46%,rgba(5,16,11,0.3)_58%,transparent_70%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(140%_95%_at_50%_52%,transparent_45%,rgba(5,16,11,0.5)_100%)]" />
 
-      {conta.aberta && (
-        <div className="no-bar flex gap-2 overflow-x-auto px-1 pb-1">
-          <Atalho icone="enviar" rotulo="Enviar Pix" href="/conta" />
-          <Atalho icone="credito" rotulo="Crédito" href="/credito" />
-          <Atalho icone="nota" rotulo="Extrato" href="/conta" />
-          <Atalho icone="chat" rotulo="Conversar" href="/conversa" />
+      <motion.div
+        style={reduz ? undefined : { y, opacity: fade }}
+        className="relative flex min-h-[100dvh] flex-col justify-between px-6 pb-14 pt-8 md:px-10 md:pb-16"
+      >
+        <header className="mx-auto flex w-full max-w-[1180px] items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={asset("/coope-mark.png")} alt="" className="h-7 w-7 rounded-lg" />
+            <span className="text-[15px] font-semibold tracking-tight">Coope</span>
+          </div>
+          <nav className="hidden items-center gap-8 text-[13.5px] text-[--tinta-2] md:flex">
+            <a href="#tese" className="transition-colors hover:text-[--tinta]">Tese</a>
+            <a href="#arquitetura" className="transition-colors hover:text-[--tinta]">Arquitetura</a>
+            <a href="#produto" className="transition-colors hover:text-[--tinta]">Produto</a>
+            <a href="#negocio" className="transition-colors hover:text-[--tinta]">Negócio</a>
+          </nav>
+          <Link
+            href="/app"
+            className="rounded-full border border-[--linha] px-4 py-2 text-[13px] font-medium transition-colors hover:border-[--acento] hover:text-[--acento]"
+          >
+            Abrir o app
+          </Link>
+        </header>
+
+        <div className="mx-auto w-full max-w-[1180px]">
+          <p className="rotulo mb-6">Do agro, para o agro</p>
+
+          <h1 className="display max-w-[16ch]">
+            <RevealText texto="Crédito rural em horas," />
+            <br />
+            <RevealText texto="com a nota fiscal como prova." delay={0.18} />
+          </h1>
+
+          <motion.p
+            initial={reduz ? false : { opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ ...MOLA_SUAVE, delay: 0.55 }}
+            className="mt-7 max-w-[54ch] text-[16.5px] leading-relaxed text-[--tinta-2] md:text-[18px]"
+          >
+            A fazenda já emite as notas que provam o que ela fatura e o que gasta. A Coope organiza
+            esse histórico e leva pronto a quem empresta, para o produtor não depender de hipoteca.
+          </motion.p>
+
+          <motion.div
+            initial={reduz ? false : { opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ ...MOLA_SUAVE, delay: 0.68 }}
+            className="mt-10 flex flex-wrap items-center gap-3"
+          >
+            <a href="#produto">
+              <Magnetico className="group inline-flex items-center gap-2 rounded-full bg-[--acento] px-6 py-3.5 text-[15px] font-semibold text-[#04130b]">
+                Ver o produto
+                <ArrowRight size={17} weight="bold" className="transition-transform group-hover:translate-x-0.5" />
+              </Magnetico>
+            </a>
+            <a
+              href="#tese"
+              className="rounded-full border border-[--linha] px-6 py-3.5 text-[15px] font-medium text-[--tinta] transition-colors hover:border-[--acento] hover:text-[--acento]"
+            >
+              Ler a tese
+            </a>
+          </motion.div>
         </div>
-      )}
+      </motion.div>
+    </div>
+  );
+}
 
-      {/* 2. Financiado */}
-      <section>
-        <Titulo
-          acao={
-            <Link href="/credito" className="text-[13px] font-semibold text-brand">
-              {temCredito ? "Detalhes" : "Ver ofertas"}
-            </Link>
-          }
-        >
-          Seu financiamento
-        </Titulo>
+/* ---------------- sinais ---------------- */
 
-        {temCredito ? (
-          <Tile className="overflow-hidden">
-            <div className="p-5">
-              <div className="flex items-start justify-between gap-4">
+function Sinais() {
+  return (
+    <Secao id="sinais" className="py-28 md:py-36">
+      <div className="grid gap-12 md:grid-cols-3 md:gap-8">
+        {SINAIS.map((s, i) => (
+          <Reveal key={s.legenda} delay={i * 0.09}>
+            <div className="border-t border-[--linha] pt-6">
+              <p className="numero text-[--tinta]">
+                <Contador valor={s.valor} sufixo={s.sufixo} casas={s.casas} />
+              </p>
+              <p className="mt-4 max-w-[26ch] text-[15px] leading-snug text-[--tinta-2]">
+                {s.legenda}
+              </p>
+              <p className="mono mt-3 text-[11px] text-[--tinta-3]">{s.fonte}</p>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+
+      <TextoScroll
+        texto="A safra bate recorde e a inadimplência também. O produtor fatura bem e não consegue provar isso a quem empresta."
+        destacar={["não", "consegue", "provar"]}
+        className="mt-24 max-w-[30ch] text-[26px] font-medium leading-[1.25] tracking-[-0.025em] md:max-w-[26ch] md:text-[40px]"
+      />
+    </Secao>
+  );
+}
+
+/* ---------------- lacunas ---------------- */
+
+function Lacunas() {
+  return (
+    <Secao id="tese" className="py-24 md:py-32">
+      <div className="grid gap-14 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:gap-20">
+        <div className="lg:sticky lg:top-24 lg:self-start">
+          <p className="rotulo mb-5">Diagnóstico</p>
+          <h2 className="display-2">Três lacunas que se reforçam.</h2>
+          <p className="mt-5 max-w-[34ch] text-[15px] leading-relaxed text-[--tinta-2]">
+            Nenhuma delas é nova. O que mudou é que a infraestrutura para resolvê-las amadureceu
+            entre 2024 e 2026.
+          </p>
+        </div>
+
+        <div className="space-y-5">
+          {LACUNAS.map((l, i) => {
+            const Icone = l.icone;
+            return (
+              <Reveal key={l.id} delay={i * 0.07}>
+                <CartaoVivo className="group rounded-2xl border border-[--linha] bg-[--fundo-2] p-7 md:p-9">
+                  <div className="relative">
+                    <div className="flex items-start justify-between gap-6">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[--acento-fundo] text-[--acento]">
+                          <Icone size={18} weight="duotone" />
+                        </span>
+                        <span className="mono text-[11px] uppercase tracking-[0.18em] text-[--tinta-3]">
+                          {l.titulo}
+                        </span>
+                      </div>
+                      <span className="tnum shrink-0 text-[26px] font-semibold tracking-tight text-[--acento] md:text-[32px]">
+                        {l.numero}
+                      </span>
+                    </div>
+
+                    <p className="mt-6 text-[20px] font-medium leading-tight tracking-tight md:text-[24px]">
+                      {l.frase}
+                    </p>
+                    <p className="mt-4 max-w-[58ch] text-[14.5px] leading-relaxed text-[--tinta-2]">
+                      {l.corpo}
+                    </p>
+                    <p className="mt-5 max-w-[46ch] border-t border-[--linha] pt-4 text-[12.5px] leading-relaxed text-[--tinta-3]">
+                      {l.numeroLegenda}
+                    </p>
+                  </div>
+                </CartaoVivo>
+              </Reveal>
+            );
+          })}
+        </div>
+      </div>
+    </Secao>
+  );
+}
+
+/* ---------------- janela ---------------- */
+
+function Janela() {
+  return (
+    <Secao id="janela" className="py-24 md:py-32">
+      <Reveal>
+        <h2 className="display-2 max-w-[20ch]">A infraestrutura necessária já existe.</h2>
+      </Reveal>
+
+      <div className="mt-14 grid gap-4 md:grid-cols-3">
+        {JANELA.map((j, i) => {
+          const Icone = j.icone;
+          return (
+            <Reveal key={j.titulo} delay={i * 0.08}>
+              <div className="flex h-full flex-col justify-between rounded-2xl border border-[--linha] bg-[linear-gradient(160deg,var(--fundo-3),var(--fundo-2))] p-7">
                 <div>
-                  <p className="text-[13px] font-medium text-muted">Você pegou</p>
-                  <p className="tnum mt-1.5 text-[30px] font-bold leading-none tracking-tight text-ink">
-                    {brl(credito.financiado)}
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[--acento-fundo] text-[--acento]">
+                    <Icone size={20} weight="duotone" />
+                  </span>
+                  <p className="mt-5 text-[17px] font-semibold tracking-tight">{j.titulo}</p>
+                  <p className="mt-3 text-[14px] leading-relaxed text-[--tinta-2]">{j.corpo}</p>
+                </div>
+                <div className="mt-8 border-t border-[--linha] pt-4">
+                  <p className="tnum text-[22px] font-semibold tracking-tight text-[--acento]">
+                    {j.destaque}
+                  </p>
+                  <p className="mono mt-1 text-[10.5px] uppercase tracking-[0.16em] text-[--tinta-3]">
+                    {j.destaqueLegenda}
                   </p>
                 </div>
-                <Chip>{credito.cetAnual.toFixed(1).replace(".", ",")}% a.a.</Chip>
               </div>
-              <p className="mt-2.5 text-[12.5px] leading-snug text-muted">{credito.financiador}</p>
-            </div>
+            </Reveal>
+          );
+        })}
+      </div>
 
-            {/* 3. Quanto dá por mês */}
-            <div className="grid grid-cols-2 gap-px bg-line">
-              <div className="bg-surface px-5 py-4">
-                <p className="text-[11.5px] font-medium text-muted">Custa por mês</p>
-                <p className="tnum mt-1 text-[19px] font-bold tracking-tight text-ink">
-                  {brl(credito.custoMensal)}
-                </p>
-              </div>
-              <div className="bg-surface px-5 py-4">
-                <p className="text-[11.5px] font-medium text-muted">Você devolve</p>
-                <p className="tnum mt-1 text-[19px] font-bold tracking-tight text-ink">
-                  {brl(credito.devolver)}
-                </p>
-              </div>
-            </div>
-
-            <div className="border-t border-line px-5 py-4">
-              <div className="mb-1.5 flex justify-between text-[12.5px]">
-                <span className="text-muted">Já repassado aos fornecedores</span>
-                <span className="tnum font-medium">
-                  {brl(credito.pagoFornecedores)} de {brl(credito.financiado)}
-                </span>
-              </div>
-              <Barra
-                valor={credito.financiado ? credito.pagoFornecedores / credito.financiado : 0}
-                altura={6}
-              />
-              <p className="mt-3 text-[12px] leading-relaxed text-faint">
-                Você não paga parcela todo mês: quita tudo de uma vez na colheita. O valor acima é
-                quanto o crédito custa por mês enquanto ele corre.
-              </p>
-            </div>
-          </Tile>
-        ) : (
-          <Tile className="p-5">
-            <p className="text-[14.5px] font-semibold">Você ainda não pegou crédito</p>
-            <p className="mt-1.5 text-[13px] leading-relaxed text-muted">
-              Suas notas já provam que você paga. Dá para pegar sem hipotecar a fazenda.
-            </p>
-            <div className="mt-4">
-              <Link href="/credito">
-                <Botao largura="cheia" variante="suave">
-                  Ver quem empresta
-                </Botao>
-              </Link>
-            </div>
-          </Tile>
-        )}
-      </section>
-
-      {/* 4. Projeção de gastos */}
-      <section>
-        <Titulo>O que vem pela frente</Titulo>
-        <Tile className="p-5">
-          <div className="flex gap-6">
-            <div>
-              <p className="text-[11.5px] font-medium text-muted">Vai gastar</p>
-              <p className="tnum mt-1 text-[19px] font-bold tracking-tight text-ink">
-                R$ {compacto(gastoPrevisto)}
-              </p>
-            </div>
-            <div>
-              <p className="text-[11.5px] font-medium text-muted">Vai receber</p>
-              <p className="tnum mt-1 text-[19px] font-bold tracking-tight text-brand">
-                R$ {compacto(entradaPrevista)}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-5 flex items-end gap-2">
-            {projecao.map((p) => {
-              const hGasto = Math.max(3, (p.gasto / picoGasto) * 76);
-              const hEntrada = Math.max(3, (p.entrada / picoGasto) * 76);
-              return (
-                <div key={p.chave} className="flex flex-1 flex-col items-center gap-1.5">
-                  <div className="flex h-[80px] w-full items-end justify-center gap-[3px]">
-                    <div
-                      className={`w-1/2 rounded-t-[3px] ${p.previsto ? "bg-line" : "bg-muted/35"}`}
-                      style={{ height: hGasto }}
-                      title={`Gasto ${brl(p.gasto)}`}
-                    />
-                    <div
-                      className={`w-1/2 rounded-t-[3px] ${p.previsto ? "bg-brand/40" : "bg-brand"}`}
-                      style={{ height: hEntrada }}
-                      title={`Entrada ${brl(p.entrada)}`}
-                    />
-                  </div>
-                  <span
-                    className={`text-[9.5px] font-medium ${p.previsto ? "text-faint" : "text-muted"}`}
-                  >
-                    {p.rotulo}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 border-t border-line pt-3.5">
-            <span className="flex items-center gap-1.5 text-[11.5px] text-muted">
-              <span className="h-2.5 w-2.5 rounded-[2px] bg-muted/35" /> gasto
-            </span>
-            <span className="flex items-center gap-1.5 text-[11.5px] text-muted">
-              <span className="h-2.5 w-2.5 rounded-[2px] bg-brand" /> entrada
-            </span>
-            <span className="text-[11.5px] text-faint">barras claras = previsão</span>
-          </div>
-
-          <p className="mt-3 text-[12px] leading-relaxed text-faint">
-            A previsão repete o mesmo mês da safra passada. É o seu calendário, não uma estimativa
-            de mercado.
+      <Reveal delay={0.2}>
+        <div className="mt-16 rounded-2xl border border-[--acento]/25 bg-[--acento-fundo] p-8 md:p-12">
+          <p className="rotulo mb-5 text-[--acento]">A tese</p>
+          <p className="max-w-[46ch] text-[22px] font-medium leading-snug tracking-tight md:text-[30px]">
+            A oportunidade não é construir mais um banco nem mais um ERP agrícola. É construir a
+            camada de orquestração que falta entre os três.
           </p>
-        </Tile>
-      </section>
+        </div>
+      </Reveal>
+    </Secao>
+  );
+}
 
-      {/* Movimentos */}
-      {r.movimentos.length > 0 && (
-        <section>
-          <Titulo
-            acao={
-              <Link href="/conta" className="text-[13px] font-semibold text-brand">
-                Ver tudo
-              </Link>
-            }
-          >
-            Últimas movimentações
-          </Titulo>
-          <Tile className="overflow-hidden">
-            {r.movimentos.map((m, i) => (
-              <div key={m.id}>
-                {i > 0 && <Divisor />}
-                <Linha
-                  icone={m.tipo === "entrada" ? "mais" : "enviar"}
-                  titulo={m.contraparte}
-                  sub={m.descricao}
-                  valor={`${m.tipo === "entrada" ? "+" : "−"} ${brl(m.valor)}`}
-                  tom={m.tipo === "entrada" ? "brand" : "ink"}
-                />
-              </div>
-            ))}
-          </Tile>
-        </section>
-      )}
+/* ---------------- fluxo do dinheiro ---------------- */
 
-      {/* 5. Imposto, por último */}
-      <section>
-        <Titulo
-          acao={
-            <Link href="/imposto" className="text-[13px] font-semibold text-brand">
-              Detalhes
-            </Link>
-          }
-        >
-          Seu imposto
-        </Titulo>
-        <Tile className="overflow-hidden">
-          <Linha titulo="Vai pagar este ano" valor={brl(imposto.aPagar)} />
-          <Divisor />
-          <Linha
-            titulo="Pagaria sem organizar"
-            sub="Se a Receita estimasse seu lucro"
-            valor={brl(imposto.semOrganizar)}
-            tom="bad"
-          />
-          <div className="bg-brand-soft px-4 py-3.5">
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="text-[13px] font-semibold text-brand">Você economiza</span>
-              <span className="tnum text-[18px] font-bold text-brand">{brl(imposto.economia)}</span>
-            </div>
-          </div>
-        </Tile>
-      </section>
-
-      <div className="flex gap-3 rounded-card bg-raised px-4 py-3.5">
-        <span className="mt-px shrink-0 text-brand">
-          <Icone nome="cadeado" tamanho={17} />
-        </span>
-        <p className="text-[13px] leading-relaxed text-muted">
-          Seu dinheiro fica na sua conta, no seu CPF. A Coope organiza e avisa — nunca guarda.
+function OndeEntra() {
+  return (
+    <Secao id="fluxo" className="py-24 md:py-32">
+      <div className="max-w-[46ch]">
+        <h2 className="display-2">O dinheiro nunca passa por aqui.</h2>
+        <p className="mt-5 text-[15px] leading-relaxed text-[--tinta-2]">
+          A conta é do produtor, numa instituição autorizada. A Coope inicia pagamento sob
+          consentimento e devolve trilha ao financiador — mas não custodia, não mistura e não
+          movimenta recurso em nome próprio.
         </p>
       </div>
-    </div>
+
+      <div className="mt-14 rounded-2xl border border-[--linha] bg-[--fundo-2] p-6 md:p-10">
+        <Fluxo />
+      </div>
+
+      <Reveal delay={0.15}>
+        <p className="mono mt-6 text-[11.5px] leading-relaxed text-[--tinta-3]">
+          Res. Conjunta BCB/CMN nº 16/2025 — titularidade individualizada obrigatória, contas-bolsão
+          vedadas
+        </p>
+      </Reveal>
+    </Secao>
+  );
+}
+
+/* ---------------- arquitetura ---------------- */
+
+function Camada({
+  camada,
+  indice,
+  total,
+  progresso,
+}: {
+  camada: (typeof CAMADAS)[number];
+  indice: number;
+  total: number;
+  progresso: ReturnType<typeof useScroll>["scrollYProgress"];
+}) {
+  const reduz = useReducedMotion();
+  const passo = 1 / total;
+  const inicio = indice * passo;
+  const fim = inicio + passo * 0.85;
+
+  const y = useTransform(progresso, [inicio, fim], [90, 0]);
+  const opacidade = useTransform(progresso, [inicio, inicio + passo * 0.35], [0, 1]);
+  const escala = useTransform(progresso, [inicio, fim], [0.95, 1]);
+
+  return (
+    <motion.div
+      style={reduz ? undefined : { y, opacity: opacidade, scale: escala }}
+      className="rounded-2xl border border-[--linha] bg-[--fundo-2] p-5 md:p-6"
+    >
+      <div className="flex items-baseline gap-4">
+        <span className="mono text-[12px] text-[--acento]">{camada.n}</span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            <p className="text-[16px] font-semibold tracking-tight">{camada.nome}</p>
+            <p className="mono text-[10.5px] uppercase tracking-[0.14em] text-[--tinta-3]">
+              {camada.fonte}
+            </p>
+          </div>
+          <p className="mt-2 text-[13.5px] leading-relaxed text-[--tinta-2]">{camada.corpo}</p>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function Arquitetura() {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
+  const suave = useSpring(scrollYProgress, { stiffness: 90, damping: 26, restDelta: 0.001 });
+
+  return (
+    <section id="arquitetura" ref={ref} className="relative h-[240vh]">
+      <div className="sticky top-0 flex min-h-[100dvh] items-center px-6 py-20 md:px-10">
+        <div className="mx-auto grid w-full max-w-[1180px] gap-12 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:gap-20">
+          <div className="lg:pt-6">
+            <h2 className="display-2 max-w-[16ch]">Da nota fiscal até o dinheiro na conta.</h2>
+            <p className="mt-5 max-w-[34ch] text-[15px] leading-relaxed text-[--tinta-2]">
+              O módulo fiscal precede o de crédito porque é ele que produz o insumo do segundo. A
+              sequência não é arbitrária.
+            </p>
+            <div className="mt-8 hidden h-1 w-full max-w-[14rem] overflow-hidden rounded-full bg-[--linha] lg:block">
+              <motion.div
+                style={{ scaleX: suave }}
+                className="h-full origin-left rounded-full bg-[--acento]"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {CAMADAS.map((c, i) => (
+              <Camada
+                key={c.n}
+                camada={c}
+                indice={i}
+                total={CAMADAS.length}
+                progresso={suave}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------- produto ---------------- */
+
+function Produto() {
+  const ref = useRef<HTMLDivElement>(null);
+  const trilho = useRef<HTMLDivElement>(null);
+  const reduz = useReducedMotion();
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
+
+  // Quanto o trilho excede a tela, medido de verdade. Com porcentagem fixa o
+  // carrossel parava no meio em telas largas e passava do fim no celular.
+  const [excesso, setExcesso] = useState(0);
+  useEffect(() => {
+    const medir = () => {
+      const el = trilho.current;
+      if (!el) return;
+      setExcesso(Math.max(0, el.scrollWidth - el.clientWidth));
+    };
+    medir();
+    const ro = new ResizeObserver(medir);
+    if (trilho.current) ro.observe(trilho.current);
+    window.addEventListener("resize", medir);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", medir);
+    };
+  }, []);
+
+  const x = useTransform(scrollYProgress, [0, 1], [0, -excesso]);
+  const suave = useSpring(x, { stiffness: 80, damping: 26, restDelta: 0.001 });
+
+  return (
+    <section id="produto" ref={ref} className="relative h-[220vh]">
+      <div className="sticky top-0 flex min-h-[100dvh] flex-col justify-center overflow-hidden py-20">
+        <div className="mx-auto w-full max-w-[1180px] px-6 md:px-10">
+          <p className="rotulo mb-5">Protótipo funcional</p>
+          <h2 className="display-2 max-w-[24ch] text-[clamp(1.8rem,3.4vw,2.7rem)]">
+            O produto já roda. Você pode abrir e usar agora.
+          </h2>
+        </div>
+
+        <motion.div
+          ref={trilho}
+          style={reduz ? undefined : { x: suave }}
+          className="mt-10 flex w-max gap-5 px-6 md:px-10"
+        >
+          {TELAS.map((t) => (
+            <figure key={t.src} className="w-[200px] shrink-0 md:w-[232px]">
+              <div className="overflow-hidden rounded-[26px] border border-[--linha] bg-[--fundo-2] shadow-[0_30px_80px_-30px_rgba(0,0,0,0.9)]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={asset(t.src)}
+                  alt={t.titulo}
+                  loading="lazy"
+                  className="block h-auto w-full"
+                />
+              </div>
+              <figcaption className="mt-5">
+                <p className="text-[15px] font-semibold tracking-tight">{t.titulo}</p>
+                <p className="mt-1.5 max-w-[30ch] text-[13px] leading-relaxed text-[--tinta-2]">
+                  {t.corpo}
+                </p>
+              </figcaption>
+            </figure>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------- negócio ---------------- */
+
+function Negocio() {
+  return (
+    <Secao id="negocio" className="py-24 md:py-32">
+      <div className="grid gap-14 lg:grid-cols-2 lg:gap-20">
+        <div>
+          <h2 className="display-2 max-w-[16ch]">Como a plataforma ganha dinheiro.</h2>
+          <p className="mt-5 max-w-[42ch] text-[15px] leading-relaxed text-[--tinta-2]">
+            A Coope não empresta, não custodia e não corre risco de balanço. A receita vem de
+            originar, de comprovar economia e de corretagem repassada por parceiro registrado.
+          </p>
+
+          <div className="mt-10 space-y-5">
+            {RECEITA.map((r, i) => (
+              <Reveal key={r.nome} delay={i * 0.06}>
+                <div className={r.ativo ? "" : "opacity-55"}>
+                  <div className="flex items-baseline justify-between gap-4">
+                    <p className="text-[15.5px] font-semibold tracking-tight">{r.nome}</p>
+                    <p className="tnum text-[13px] text-[--tinta-2]">
+                      {r.ativo ? `${r.peso}%` : "zerado"}
+                    </p>
+                  </div>
+                  <div className="mt-2.5 h-[3px] overflow-hidden rounded-full bg-[--linha]">
+                    <motion.div
+                      initial={{ scaleX: 0 }}
+                      whileInView={{ scaleX: r.peso / 100 }}
+                      viewport={{ once: true, margin: "-15%" }}
+                      transition={{ ...MOLA_SUAVE, delay: 0.1 + i * 0.06 }}
+                      className="h-full origin-left rounded-full bg-[--acento]"
+                    />
+                  </div>
+                  <p className="mt-2.5 text-[13px] leading-relaxed text-[--tinta-2]">{r.detalhe}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+
+        <div className="lg:pt-4">
+          <Reveal>
+            <div className="rounded-2xl border border-[--linha] bg-[--fundo-2] p-7 md:p-8">
+              <p className="rotulo mb-1">A conta, aberta</p>
+              <p className="mb-7 text-[13px] leading-relaxed text-[--tinta-2]">
+                Uma cooperativa média de Mato Grosso. Nenhum número aqui é resultado: são as
+                premissas, para você refazer a conta com as suas.
+              </p>
+
+              {CONTA_COOP.map((l, i) => (
+                <div
+                  key={l.rotulo}
+                  className={`flex items-baseline justify-between gap-4 py-2.5 ${
+                    i > 0 ? "border-t border-[--linha]" : ""
+                  } ${l.forte ? "mt-1 pt-4" : ""}`}
+                >
+                  <span
+                    className={
+                      l.forte
+                        ? "text-[14.5px] font-semibold"
+                        : "text-[13.5px] text-[--tinta-2]"
+                    }
+                  >
+                    {l.rotulo}
+                  </span>
+                  <span
+                    className={`tnum shrink-0 ${
+                      l.forte
+                        ? "text-[19px] font-semibold text-[--acento]"
+                        : "text-[14px] text-[--tinta]"
+                    }`}
+                  >
+                    {l.valor}
+                  </span>
+                </div>
+              ))}
+
+              <p className="mt-6 border-t border-[--linha] pt-5 text-[12px] leading-relaxed text-[--tinta-3]">
+                O produtor da demonstração fatura R$ 21,5 milhões e economiza R$ 666 mil de imposto.
+                Ele está acima da média, por isso a conta acima usa R$ 285 mil.
+              </p>
+            </div>
+          </Reveal>
+        </div>
+      </div>
+    </Secao>
+  );
+}
+
+/* ---------------- fossos ---------------- */
+
+function Fossos() {
+  return (
+    <Secao id="fossos" className="py-24 md:py-32">
+      <Reveal>
+        <h2 className="display-2 max-w-[18ch]">Por que fica difícil copiar depois.</h2>
+      </Reveal>
+
+      <div className="mt-14 grid gap-px overflow-hidden rounded-2xl border border-[--linha] bg-[--linha] md:grid-cols-2">
+        {FOSSOS.map((f, i) => {
+          const Icone = f.icone;
+          return (
+            <Reveal key={f.titulo} delay={i * 0.06}>
+              <div className="h-full bg-[--fundo] p-8 transition-colors duration-500 hover:bg-[--fundo-2]">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[--acento-fundo] text-[--acento]">
+                  <Icone size={20} weight="duotone" />
+                </span>
+                <p className="mt-5 text-[17px] font-semibold tracking-tight">{f.titulo}</p>
+                <p className="mt-3 max-w-[44ch] text-[14px] leading-relaxed text-[--tinta-2]">
+                  {f.corpo}
+                </p>
+              </div>
+            </Reveal>
+          );
+        })}
+      </div>
+    </Secao>
+  );
+}
+
+/* ---------------- normas ---------------- */
+
+const NORMAS = [
+  "Res. Conjunta BCB/CMN nº 16/2025",
+  "Res. CMN nº 4.935/2021",
+  "Res. CVM nº 214/2024",
+  "Res. CVM nº 19/2021",
+  "Circular BCB nº 3.978/2020",
+  "IN RFB nº 1.848/2018",
+  "Res. BCB nº 518/2025",
+  "Res. CNSP/SUSEP nº 55/2025",
+  "Lei nº 14.130/2021",
+  "LGPD nº 13.709/2018",
+];
+
+function Normas() {
+  return (
+    <section className="border-y border-[--linha] py-7">
+      <Marquise itens={NORMAS} />
+    </section>
+  );
+}
+
+/* ---------------- limites ---------------- */
+
+function Limites() {
+  return (
+    <Secao id="limites" className="py-24 md:py-32">
+      <div className="grid gap-12 lg:grid-cols-[minmax(0,16rem)_minmax(0,1fr)] lg:gap-20">
+        <div>
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-[--linha] text-[--tinta-2]">
+            <Warning size={19} weight="duotone" />
+          </span>
+          <h2 className="display-2 mt-6 max-w-[12ch]">O que ainda não está resolvido.</h2>
+        </div>
+
+        <ul className="space-y-0">
+          {LIMITES.map((l, i) => (
+            <Reveal key={l} delay={i * 0.06}>
+              <li className="border-t border-[--linha] py-6 text-[15.5px] leading-relaxed text-[--tinta-2] first:border-t-0 first:pt-0">
+                {l}
+              </li>
+            </Reveal>
+          ))}
+        </ul>
+      </div>
+    </Secao>
+  );
+}
+
+/* ---------------- fecho ---------------- */
+
+function Fecho() {
+  return (
+    <Secao id="fecho" className="pb-20 pt-24 md:pb-24 md:pt-32">
+      <Reveal>
+        <div className="relative overflow-hidden rounded-[28px] border border-[--linha] bg-[linear-gradient(150deg,var(--fundo-3),var(--fundo-2)_60%)] px-8 py-16 text-center md:px-16 md:py-24">
+          <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-[--acento] opacity-[0.07] blur-3xl" />
+          <div className="relative">
+            <h2 className="display-2 mx-auto max-w-[20ch]">
+              O produto está de pé. O que falta é credenciamento.
+            </h2>
+            <p className="mx-auto mt-6 max-w-[52ch] text-[15.5px] leading-relaxed text-[--tinta-2]">
+              Entre nove e quatorze meses até operar de verdade. O prazo não é de engenharia: cada
+              parceiro de conta e cada financiador leva de 60 a 120 dias para credenciar.
+            </p>
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+              <Link href="/app">
+                <Magnetico className="group inline-flex items-center gap-2 rounded-full bg-[--acento] px-7 py-4 text-[15px] font-semibold text-[#04130b]">
+                  Abrir o protótipo
+                  <ArrowUpRight size={17} weight="bold" className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                </Magnetico>
+              </Link>
+              <a
+                href="#tese"
+                className="rounded-full border border-[--linha] px-7 py-4 text-[15px] font-medium transition-colors hover:border-[--acento] hover:text-[--acento]"
+              >
+                Rever a tese
+              </a>
+            </div>
+          </div>
+        </div>
+      </Reveal>
+
+      <footer className="mt-16 flex flex-col items-center justify-between gap-5 border-t border-[--linha] pt-8 text-[12.5px] text-[--tinta-3] md:flex-row">
+        <div className="flex items-center gap-2.5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={asset("/coope-mark.png")} alt="" className="h-5 w-5 rounded-md opacity-70" />
+          <span>Coope · Do agro, para o agro</span>
+        </div>
+        <p className="max-w-[52ch] text-center leading-relaxed md:text-right">
+          Documento de fundamentação. Dados de exemplo, sem integração real ativa. Não constitui
+          oferta de valores mobiliários.
+        </p>
+      </footer>
+    </Secao>
+  );
+}
+
+/* ================================================================ */
+
+export default function SiteInvestidores() {
+  const { scrollYProgress } = useScroll();
+
+  return (
+    <main className="grao relative">
+      <BarraProgresso progresso={scrollYProgress} />
+      <Dobra />
+      <Sinais />
+      <Lacunas />
+      <Janela />
+      <OndeEntra />
+      <Arquitetura />
+      <Produto />
+      <Negocio />
+      <Fossos />
+      <Normas />
+      <Limites />
+      <Fecho />
+    </main>
   );
 }

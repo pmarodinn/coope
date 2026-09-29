@@ -76,9 +76,12 @@ export function Fluxo() {
 
   return (
     <div ref={ref} className="w-full">
+      {/* No celular o diagrama não cabe legível: em vez de encolher o texto
+          para 5px, ele rola na horizontal com uma largura mínima. */}
+      <div className="-mx-6 overflow-x-auto px-6 pb-2 md:mx-0 md:overflow-visible md:px-0">
       <svg
         viewBox="0 0 920 360"
-        className="w-full"
+        className="w-full min-w-[620px] md:min-w-0"
         role="img"
         aria-label="O dinheiro vai do financiador direto para a conta do produtor e dela para o fornecedor. A Coope troca apenas dados e instruções com os três."
       >
@@ -161,6 +164,7 @@ export function Fluxo() {
           </motion.g>
         ))}
       </svg>
+      </div>
 
       <div className="mt-6 flex flex-wrap gap-x-7 gap-y-2.5">
         <span className="flex items-center gap-2.5 text-[12.5px] text-[--tinta-2]">

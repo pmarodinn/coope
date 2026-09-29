@@ -1,6 +1,7 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useInView } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
@@ -287,6 +288,8 @@ function suportaWebGL() {
 }
 
 export function GrassField({ className = "" }: { className?: string }) {
+  const raiz = useRef<HTMLDivElement>(null);
+  const naTela = useInView(raiz, { margin: "120px 0px" });
   const [pronto, setPronto] = useState(false);
   const [ok, setOk] = useState(true);
   const [reduzido, setReduzido] = useState(false);
@@ -311,6 +314,7 @@ export function GrassField({ className = "" }: { className?: string }) {
   if (!ok) {
     return (
       <div
+        ref={raiz}
         className={`${className} bg-[radial-gradient(120%_80%_at_50%_120%,#0e6b3f_0%,#04130b_55%,#07120d_100%)]`}
         aria-hidden
       />
@@ -318,8 +322,11 @@ export function GrassField({ className = "" }: { className?: string }) {
   }
 
   return (
-    <div className={className} aria-hidden>
+    <div ref={raiz} className={className} aria-hidden>
       <Canvas
+        // Fora da tela o laço para: sem isto o campo seguiria desenhando
+        // dezenas de milhares de lâminas durante toda a leitura da página.
+        frameloop={naTela ? "always" : "never"}
         dpr={[1, 1.75]}
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
         camera={{ position: [CAMERA.x, CAMERA.y, CAMERA.z], fov: 52, near: 0.1, far: 240 }}

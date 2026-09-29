@@ -24,7 +24,7 @@ export default function Negocio() {
   return (
     <div className="space-y-5 pt-1">
       <div className="flex items-center gap-2 px-1">
-        <Link href="/" className="-ml-1 text-muted" aria-label="Voltar">
+        <Link href="/app" className="-ml-1 text-muted" aria-label="Voltar">
           <Icone nome="voltar" tamanho={20} />
         </Link>
         <div className="min-w-0">

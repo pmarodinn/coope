@@ -22,6 +22,7 @@ const nextConfig = {
         env: {
           NEXT_PUBLIC_ESTATICO: "1",
           NEXT_PUBLIC_BASE_PATH: basePath,
+          NEXT_PUBLIC_SITE_URL: process.env.SITE_URL ?? "",
         },
       }
     : {}),

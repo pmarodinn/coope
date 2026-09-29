@@ -129,7 +129,7 @@ export default function Conta() {
           </ul>
 
           <div className="mt-5">
-            <Link href="/abrir-conta">
+            <Link href="/app/abrir-conta">
               <Botao largura="cheia">Abrir minha conta</Botao>
             </Link>
           </div>

@@ -149,7 +149,7 @@ body {
   --fundo-3: #0b2018;
   --tinta: #eaf2ec;
   --tinta-2: #9db0a5;
-  --tinta-3: #66796e;
+  --tinta-3: #87988f;
   --linha: rgba(233, 255, 241, 0.1);
   --acento: #3fc77f;
   --acento-fundo: rgba(63, 199, 127, 0.12);
@@ -213,5 +213,54 @@ body {
   *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* ----------------------------------------------------------------
+   Impressão. Tudo que anima começa invisível e preso ao scroll, então
+   sem isto o PDF sai com dezenas de páginas em branco.
+   ---------------------------------------------------------------- */
+@media print {
+  .site-escuro {
+    --fundo: #ffffff;
+    --fundo-2: #ffffff;
+    --fundo-3: #f4f5f2;
+    --tinta: #0d1a14;
+    --tinta-2: #3c4a42;
+    --tinta-3: #5d6d64;
+    --linha: rgba(13, 26, 20, 0.16);
+    --acento: #0a6e41;
+  }
+
+  /* Solta o que estava presa ao scroll e revela o que entraria por animação. */
+  .site-escuro *,
+  .site-escuro *::before,
+  .site-escuro *::after {
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .site-escuro section {
+    height: auto !important;
+    min-height: 0 !important;
+    page-break-inside: avoid;
+  }
+
+  .site-escuro .sticky,
+  .site-escuro [style*="position: sticky"] {
+    position: static !important;
+  }
+
+  /* A encosta em WebGL e a marquise não têm função no papel. */
+  canvas,
+  .sem-impressao {
+    display: none !important;
+  }
+
+  @page {
+    margin: 14mm;
   }
 }

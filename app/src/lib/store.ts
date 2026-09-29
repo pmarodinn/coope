@@ -69,6 +69,44 @@ export function resetar() {
   g.__coope = estadoInicial();
 }
 
+/**
+ * Deixa a demonstração no meio da jornada: conta aberta, crédito tomado e um
+ * fornecedor já pago.
+ *
+ * Abrir um app financeiro em "R$ 0" comunica produto vazio. Quem vê a demo tem
+ * poucos minutos e não vai percorrer o onboarding inteiro antes de entender o
+ * que a tela faz. O caminho do zero continua disponível em "Reiniciar".
+ */
+export function semear() {
+  const e = estadoInicial();
+
+  e.consentimentoOpenFinance = true;
+  e.consentimentoConcedidoEm = new Date().toISOString();
+  e.certificadoVinculado = true;
+  e.aceites = { termos: true, privacidade: true, correspondente: true };
+  e.aceiteEm = new Date().toISOString();
+  e.contaAberta = true;
+  e.contaAbertaEm = new Date().toISOString();
+  e.notasIngeridas = 84;
+  e.ofertaContratada = "OF-001";
+
+  const total = e.travas.reduce((soma, t) => soma + t.valor, 0);
+  e.saldo = total;
+  e.movimentos = [
+    {
+      id: "MV0001",
+      quando: new Date().toISOString(),
+      descricao: "Crédito de custeio recebido",
+      contraparte: "Fiagro Terra Capital Agro FIC FIDC",
+      valor: total,
+      tipo: "entrada",
+      e2e: null,
+    },
+  ];
+
+  g.__coope = e;
+}
+
 export function registrar(
   camada: EventoAuditoria["camada"],
   evento: string,

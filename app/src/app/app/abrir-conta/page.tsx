@@ -47,7 +47,7 @@ export default function AbrirConta() {
     fetch("/api/onboarding")
       .then((r) => r.json())
       .then((r) => {
-        if (r.contaAberta) router.replace("/conta");
+        if (r.contaAberta) router.replace("/app/conta");
         if (r.consentimentoOpenFinance) {
           setConectado(true);
           setEtapa(2);
@@ -80,7 +80,7 @@ export default function AbrirConta() {
       body: JSON.stringify({ aceites }),
     }).then((x) => x.json());
     setAbrindo(false);
-    if (r.ok) router.push("/conta");
+    if (r.ok) router.push("/app/conta");
     else setErro(r.mensagem ?? "Não deu para abrir a conta.");
   }
 
@@ -89,7 +89,7 @@ export default function AbrirConta() {
   return (
     <div className="space-y-5 pt-1">
       <div className="flex items-center gap-2 px-1">
-        <Link href="/conta" className="-ml-1 text-muted" aria-label="Voltar">
+        <Link href="/app/conta" className="-ml-1 text-muted" aria-label="Voltar">
           <Icone nome="voltar" tamanho={20} />
         </Link>
         <h1 className="text-[22px] font-bold tracking-tight">Abrir sua conta</h1>

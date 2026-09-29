@@ -3,14 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
+import { asset } from "@/lib/asset";
 import { Icone, Logo } from "./ui";
 
 const ABAS = [
-  { href: "/", icone: "casa", rotulo: "Início" },
-  { href: "/imposto", icone: "nota", rotulo: "Imposto" },
-  { href: "/credito", icone: "credito", rotulo: "Crédito" },
-  { href: "/conta", icone: "conta", rotulo: "Conta" },
-  { href: "/conversa", icone: "chat", rotulo: "Conversa" },
+  { href: "/app", icone: "casa", rotulo: "Início" },
+  { href: "/app/imposto", icone: "nota", rotulo: "Imposto" },
+  { href: "/app/credito", icone: "credito", rotulo: "Crédito" },
+  { href: "/app/conta", icone: "conta", rotulo: "Conta" },
+  { href: "/app/conversa", icone: "chat", rotulo: "Conversa" },
 ] as const;
 
 function Menu() {
@@ -51,9 +52,9 @@ function Menu() {
           <div className="fixed inset-0 z-40" onClick={() => setAberto(false)} aria-hidden />
           <div className="pop absolute right-0 top-11 z-50 w-56 overflow-hidden rounded-card bg-surface shadow-float">
             {[
-              { href: "/seguranca", icone: "escudo", rotulo: "Segurança" },
-              { href: "/cooperativa", icone: "conta", rotulo: "Visão da cooperativa" },
-              { href: "/negocio", icone: "credito", rotulo: "Números do negócio" },
+              { href: "/app/seguranca", icone: "escudo", rotulo: "Segurança" },
+              { href: "/app/cooperativa", icone: "conta", rotulo: "Visão da cooperativa" },
+              { href: "/app/negocio", icone: "credito", rotulo: "Números do negócio" },
             ].map((l) => (
               <div key={l.href}>
                 <Link
@@ -76,18 +77,27 @@ function Menu() {
               Tema {tema === "dark" ? "claro" : "escuro"}
             </button>
             <div className="h-px bg-line" />
+            <Link
+              href="/"
+              onClick={() => setAberto(false)}
+              className="flex items-center gap-2.5 px-4 py-3 text-[14px] font-medium text-ink transition-colors active:bg-raised"
+            >
+              <Icone nome="voltar" tamanho={17} />
+              Voltar à apresentação
+            </Link>
+            <div className="h-px bg-line" />
             <button
               type="button"
               disabled={indo}
               onClick={async () => {
                 setIndo(true);
                 await fetch("/api/reset", { method: "POST" });
-                window.location.href = "/";
+                window.location.assign(asset("/app/"));
               }}
               className="flex w-full items-center gap-2.5 px-4 py-3 text-left text-[14px] font-medium text-muted transition-colors active:bg-raised disabled:opacity-50"
             >
               <Icone nome="voltar" tamanho={17} />
-              {indo ? "Reiniciando…" : "Reiniciar demonstração"}
+              {indo ? "Reiniciando…" : "Começar do zero"}
             </button>
           </div>
         </>
