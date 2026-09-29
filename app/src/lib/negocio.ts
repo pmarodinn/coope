@@ -9,7 +9,7 @@ import { NOTAS } from "./seed";
  */
 
 /**
- * Piloto: três cooperativas do Mato Grosso.
+ * Piloto: uma cooperativa do Mato Grosso.
  *
  * O produtor da demo é grande (R$ 21,5 mi de receita) e não representa a média
  * da carteira. Projetar a economia dele sobre os 184 produtores inflaria a
@@ -17,7 +17,7 @@ import { NOTAS } from "./seed";
  */
 const PILOTO = {
   produtoresAtivos: 184,
-  cooperativas: 3,
+  cooperativas: 1,
   /** Um custeio por produtor por ciclo, distribuído ao longo do ano. */
   operacoesMes: 15,
   ticketMedio: 1_500_000,
@@ -74,7 +74,7 @@ export function metricas(): Metrica[] {
       chave: "produtores",
       rotulo: "Produtores ativos",
       valor: String(PILOTO.produtoresAtivos),
-      nota: `Em ${PILOTO.cooperativas} cooperativas parceiras`,
+      nota: "Numa cooperativa parceira",
     },
     {
       chave: "notas",

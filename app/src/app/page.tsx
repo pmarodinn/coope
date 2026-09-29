@@ -150,6 +150,46 @@ const RECEITA = [
 ];
 
 /**
+ * Dimensionamento por volume de dinheiro, e não por número de produtores.
+ *
+ * A contagem de produtores acima do limite do LCDPR não está publicada em
+ * fonte que se possa citar — o Censo Agro classifica por área e por
+ * agricultura familiar, não por faixa de receita. Em vez de inventar o número,
+ * o funil parte do crédito que já circula e o leitor multiplica pela contagem
+ * que ele acreditar.
+ */
+const MERCADO = [
+  {
+    n: "01",
+    rotulo: "Crédito ao agro empresarial, por safra",
+    valor: "R$ 516,2 bi",
+    conta: "Plano Safra 2025/26, agricultura empresarial.",
+    fonte: "Ministério da Agricultura e Pecuária",
+  },
+  {
+    n: "02",
+    rotulo: "Do qual já é capital privado",
+    valor: "R$ 402,4 bi",
+    conta: "R$ 516,2 bi anunciados menos R$ 113,8 bi com equalização do Tesouro.",
+    fonte: "Análise setorial sobre equalização de juros",
+  },
+  {
+    n: "03",
+    rotulo: "Onde a Coope se conecta hoje",
+    valor: "R$ 44,7 bi",
+    conta: "Patrimônio líquido dos 145 Fiagros operacionais, que cresceu 204% em dois anos.",
+    fonte: "Boletim CVM do Agronegócio",
+  },
+  {
+    n: "04",
+    rotulo: "A nossa fatia, originando 1% disso",
+    valor: "R$ 8,9 mi/ano",
+    conta: "2% de take rate sobre R$ 447 milhões originados. Um centésimo do capital dos Fiagros.",
+    fonte: "Take rate no piso da faixa de 1% a 3%",
+  },
+];
+
+/**
  * Memória de cálculo de uma cooperativa. Um total de receita com etiqueta de
  * "simulado" faz o leitor duvidar do resto; premissas à vista ele confere.
  */
@@ -243,6 +283,7 @@ function Dobra() {
             <span className="text-[15px] font-semibold tracking-tight">Coope</span>
           </div>
           <nav className="hidden items-center gap-8 text-[13.5px] text-[--tinta-2] md:flex">
+            <a href="#mercado" className="transition-colors hover:text-[--tinta]">Mercado</a>
             <a href="#tese" className="transition-colors hover:text-[--tinta]">Tese</a>
             <a href="#arquitetura" className="transition-colors hover:text-[--tinta]">Arquitetura</a>
             <a href="#produto" className="transition-colors hover:text-[--tinta]">Produto</a>
@@ -616,6 +657,74 @@ function Produto() {
   );
 }
 
+/* ---------------- mercado ---------------- */
+
+function Mercado() {
+  return (
+    <Secao id="mercado" className="py-24 md:py-32">
+      <div className="max-w-[46ch]">
+        <p className="rotulo mb-5">Tamanho de mercado</p>
+        <h2 className="display-2">O capital já existe. Falta quem organize o pedido.</h2>
+        <p className="mt-5 text-[15px] leading-relaxed text-[--tinta-2]">
+          O funil parte do dinheiro que já circula no agro, não de uma projeção de adoção. Cada
+          linha traz a conta e a fonte, para você refazer com as suas premissas — e repare que a
+          última linha é um centésimo da anterior.
+        </p>
+      </div>
+
+      <div className="mt-14 space-y-3">
+        {MERCADO.map((m, i) => (
+          <Reveal key={m.n} delay={i * 0.07}>
+            <div
+              className={`grid items-baseline gap-x-6 gap-y-3 rounded-2xl border px-6 py-6 md:grid-cols-[auto_1fr_auto] md:px-8 ${
+                i === MERCADO.length - 1
+                  ? "border-[--acento] bg-[--acento-fundo]"
+                  : "border-[--linha] bg-[--fundo-2]"
+              }`}
+            >
+              <span className="mono text-[12px] text-[--acento]">{m.n}</span>
+
+              <div className="min-w-0">
+                <p className="text-[15px] font-semibold tracking-tight">{m.rotulo}</p>
+                <p className="mt-1.5 text-[13px] leading-relaxed text-[--tinta-2]">{m.conta}</p>
+                <p className="mono mt-2 text-[10.5px] uppercase tracking-[0.14em] text-[--tinta-3]">
+                  {m.fonte}
+                </p>
+              </div>
+
+              <p
+                className={`tnum text-[28px] font-semibold leading-none tracking-tight md:text-[34px] ${
+                  i === MERCADO.length - 1 ? "text-[--acento]" : "text-[--tinta]"
+                }`}
+              >
+                {m.valor}
+              </p>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+
+      <Reveal delay={0.1}>
+        <div className="mt-8 grid gap-6 rounded-2xl border border-[--linha] px-6 py-6 md:grid-cols-[auto_1fr] md:px-8">
+          <span className="mt-0.5 shrink-0 text-[--tinta-3]">
+            <Warning size={19} weight="regular" />
+          </span>
+          <div>
+            <p className="text-[14px] font-semibold">O número que ainda falta</p>
+            <p className="mt-2 max-w-[70ch] text-[13px] leading-relaxed text-[--tinta-2]">
+              Quantos produtores pessoa física faturam acima de R$ 4,8 milhões, o limite que torna o
+              LCDPR obrigatório. O Censo Agropecuário classifica por área e por agricultura
+              familiar, não por faixa de receita, e a Receita Federal não publica a contagem de
+              declarantes. Por isso o funil acima é medido em dinheiro, não em gente. A conta por
+              produtor está logo abaixo: multiplique pela contagem que você considerar defensável.
+            </p>
+          </div>
+        </div>
+      </Reveal>
+    </Secao>
+  );
+}
+
 /* ---------------- negócio ---------------- */
 
 function Negocio() {
@@ -695,6 +804,12 @@ function Negocio() {
               <p className="mt-6 border-t border-[--linha] pt-5 text-[12px] leading-relaxed text-[--tinta-3]">
                 O produtor da demonstração fatura R$ 21,5 milhões e economiza R$ 666 mil de imposto.
                 Ele está acima da média, por isso a conta acima usa R$ 285 mil.
+              </p>
+              <p className="mt-3 text-[12px] leading-relaxed text-[--tinta-3]">
+                Vale notar que os dois caminhos batem: pelo lado do capital, originar 1% do
+                patrimônio dos Fiagros dá R$ 8,9 milhões ao ano; pelo lado do produtor, uma
+                cooperativa dá R$ 10,8 milhões. São contas independentes que chegam à mesma ordem
+                de grandeza.
               </p>
             </div>
           </Reveal>
@@ -844,6 +959,7 @@ export default function SiteInvestidores() {
       <BarraProgresso progresso={scrollYProgress} />
       <Dobra />
       <Sinais />
+      <Mercado />
       <Lacunas />
       <Janela />
       <OndeEntra />

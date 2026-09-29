@@ -29,7 +29,7 @@ export default function Negocio() {
         </Link>
         <div className="min-w-0">
           <h1 className="text-[22px] font-bold tracking-tight">Números do negócio</h1>
-          <p className="text-[12.5px] text-muted">Piloto com 3 cooperativas</p>
+          <p className="text-[12.5px] text-muted">Piloto em 1 cooperativa</p>
         </div>
       </div>
 
