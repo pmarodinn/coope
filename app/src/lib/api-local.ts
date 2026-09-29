@@ -1,5 +1,6 @@
 import type { Resposta } from "./servicos";
 import * as s from "./servicos";
+import { analise, CASOS } from "./inteligencia";
 import { estado, semear } from "./store";
 
 /**
@@ -18,6 +19,10 @@ const ROTAS: Record<string, Manipulador> = {
   "GET /api/resumo": () => s.lerResumo(),
   "GET /api/compliance": () => s.lerCompliance(),
   "GET /api/negocio": () => s.lerNegocio(),
+  "GET /api/motor": () => ({
+    status: 200,
+    corpo: { casos: CASOS.map(({ extrato: _, ...c }) => c), ...analise(casoAtual) },
+  }),
   "GET /api/onboarding": () => s.lerOnboarding(),
   "GET /api/baas/conta": () => s.lerConta(),
   "GET /api/fiscal/lcdpr": () => s.lerLCDPR(),
@@ -73,6 +78,9 @@ function restaurar() {
   }
 }
 
+/** O console troca de caso por querystring; guardo aqui entre chamadas. */
+let casoAtual = "menegat";
+
 let instalado = false;
 
 export function instalarApiLocal() {
@@ -103,6 +111,11 @@ export function instalarApiLocal() {
 
     // Remove o basePath do Pages para casar com as chaves acima.
     const rota = caminho.slice(caminho.indexOf("/api/"));
+
+    if (rota === "/api/motor") {
+      const q = url.includes("?") ? new URLSearchParams(url.split("?")[1]) : null;
+      casoAtual = q?.get("caso") ?? "menegat";
+    }
     const metodo = (init?.method ?? "GET").toUpperCase();
     const manipulador = ROTAS[`${metodo} ${rota}`];
 

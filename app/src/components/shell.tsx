@@ -55,6 +55,7 @@ function Menu() {
               { href: "/app/seguranca", icone: "escudo", rotulo: "Segurança" },
               { href: "/app/cooperativa", icone: "conta", rotulo: "Visão da cooperativa" },
               { href: "/app/negocio", icone: "credito", rotulo: "Números do negócio" },
+              { href: "/motor", icone: "raio", rotulo: "Motor de decisão" },
             ].map((l) => (
               <div key={l.href}>
                 <Link

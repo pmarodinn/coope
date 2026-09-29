@@ -318,6 +318,50 @@ function construirTransacoes(): TransacaoBancaria[] {
 
 export const TRANSACOES: TransacaoBancaria[] = construirTransacoes();
 
+/**
+ * Extrato de outro produtor da mesma cooperativa, usado para demonstrar o
+ * motor de risco separando quem paga de quem não paga.
+ *
+ * É o caso que justifica o Open Finance: a aposta corre num banco e o pedido
+ * de crédito chega em outro. Quem enxerga só a própria conta não vê nada.
+ */
+export const EXTRATO_RISCO: TransacaoBancaria[] = (() => {
+  const linhas: {
+    desc: string;
+    valor: number;
+    tipo: "credito" | "debito";
+    banco: number;
+    dia: number;
+  }[] = [
+    { desc: "Pagamento — BET7K Entretenimento", valor: 18_500, tipo: "debito", banco: 2, dia: 232 },
+    { desc: "Pagamento — Betano Apostas", valor: 24_200, tipo: "debito", banco: 2, dia: 261 },
+    { desc: "Pagamento — Blaze Apostas Online", valor: 31_900, tipo: "debito", banco: 2, dia: 289 },
+    { desc: "Pagamento — BET7K Entretenimento", valor: 27_400, tipo: "debito", banco: 2, dia: 305 },
+    { desc: "Crédito recebido — Betano Apostas", valor: 9_800, tipo: "credito", banco: 2, dia: 297 },
+    { desc: "Juros de cheque especial", valor: 14_600, tipo: "debito", banco: 1, dia: 243 },
+    { desc: "Juros de cheque especial", valor: 21_300, tipo: "debito", banco: 1, dia: 274 },
+    { desc: "Encargos por atraso — parcela de financiamento", valor: 8_950, tipo: "debito", banco: 1, dia: 281 },
+    { desc: "Débito parcela — Banco Rural Norte (CCB)", valor: 118_400, tipo: "debito", banco: 2, dia: 250 },
+    { desc: "Débito parcela — Banco Rural Norte (CCB)", valor: 118_400, tipo: "debito", banco: 2, dia: 280 },
+    { desc: "Débito parcela — Banco Rural Norte (CCB)", valor: 118_400, tipo: "debito", banco: 2, dia: 310 },
+    { desc: "Saque em espécie — agência", valor: 62_000, tipo: "debito", banco: 0, dia: 268 },
+  ];
+
+  return linhas.map((c, k) => {
+    const banco = BANCOS[c.banco % BANCOS.length];
+    return {
+      id: `TR${String(k + 1).padStart(4, "0")}`,
+      instituicao: banco.nome,
+      conta: banco.conta,
+      data: dataSafra(c.dia),
+      valor: c.valor,
+      tipo: c.tipo,
+      descricao: c.desc,
+      conciliadaCom: null,
+    };
+  });
+})();
+
 export const OFERTAS: OfertaFunding[] = [
   {
     id: "OF-001",

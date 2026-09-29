@@ -22,9 +22,12 @@ export function Chrome({ children }: { children: ReactNode }) {
 
   if (path.startsWith("/app")) return <Shell>{children}</Shell>;
 
+  // O console é leitura de dado denso: rolagem suave atrapalha a varredura.
+  const ehConsole = path.startsWith("/motor");
+
   return (
     <div className="site-escuro min-h-screen bg-[--fundo] text-[--tinta] antialiased">
-      <LenisScroll />
+      {!ehConsole && <LenisScroll />}
       {children}
     </div>
   );
