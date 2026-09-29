@@ -180,13 +180,6 @@ const MERCADO = [
     conta: "Patrimônio líquido dos 145 Fiagros operacionais, que cresceu 204% em dois anos.",
     fonte: "Boletim CVM do Agronegócio",
   },
-  {
-    n: "04",
-    rotulo: "A nossa fatia, originando 1% disso",
-    valor: "R$ 8,9 mi/ano",
-    conta: "2% de take rate sobre R$ 447 milhões originados. Um centésimo do capital dos Fiagros.",
-    fonte: "Take rate no piso da faixa de 1% a 3%",
-  },
 ];
 
 /**
@@ -667,8 +660,7 @@ function Mercado() {
         <h2 className="display-2">O capital já existe. Falta quem organize o pedido.</h2>
         <p className="mt-5 text-[15px] leading-relaxed text-[--tinta-2]">
           O funil parte do dinheiro que já circula no agro, não de uma projeção de adoção. Cada
-          linha traz a conta e a fonte, para você refazer com as suas premissas — e repare que a
-          última linha é um centésimo da anterior.
+          linha traz a conta e a fonte, para você refazer com as suas premissas.
         </p>
       </div>
 
@@ -704,23 +696,6 @@ function Mercado() {
         ))}
       </div>
 
-      <Reveal delay={0.1}>
-        <div className="mt-8 grid gap-6 rounded-2xl border border-[--linha] px-6 py-6 md:grid-cols-[auto_1fr] md:px-8">
-          <span className="mt-0.5 shrink-0 text-[--tinta-3]">
-            <Warning size={19} weight="regular" />
-          </span>
-          <div>
-            <p className="text-[14px] font-semibold">O número que ainda falta</p>
-            <p className="mt-2 max-w-[70ch] text-[13px] leading-relaxed text-[--tinta-2]">
-              Quantos produtores pessoa física faturam acima de R$ 4,8 milhões, o limite que torna o
-              LCDPR obrigatório. O Censo Agropecuário classifica por área e por agricultura
-              familiar, não por faixa de receita, e a Receita Federal não publica a contagem de
-              declarantes. Por isso o funil acima é medido em dinheiro, não em gente. A conta por
-              produtor está logo abaixo: multiplique pela contagem que você considerar defensável.
-            </p>
-          </div>
-        </div>
-      </Reveal>
     </Secao>
   );
 }
@@ -804,12 +779,6 @@ function Negocio() {
               <p className="mt-6 border-t border-[--linha] pt-5 text-[12px] leading-relaxed text-[--tinta-3]">
                 O produtor da demonstração fatura R$ 21,5 milhões e economiza R$ 666 mil de imposto.
                 Ele está acima da média, por isso a conta acima usa R$ 285 mil.
-              </p>
-              <p className="mt-3 text-[12px] leading-relaxed text-[--tinta-3]">
-                Vale notar que os dois caminhos batem: pelo lado do capital, originar 1% do
-                patrimônio dos Fiagros dá R$ 8,9 milhões ao ano; pelo lado do produtor, uma
-                cooperativa dá R$ 10,8 milhões. São contas independentes que chegam à mesma ordem
-                de grandeza.
               </p>
             </div>
           </Reveal>
