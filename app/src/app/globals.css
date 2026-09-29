@@ -198,6 +198,14 @@ body {
   color: var(--tinta-3);
 }
 
+/* Na dobra a tarja fica sobre vidro escuro, onde o cinza da paleta some. */
+.rotulo-dobra {
+  color: var(--acento);
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.95;
+}
+
 .grao::after {
   content: "";
   position: absolute;

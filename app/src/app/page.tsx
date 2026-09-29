@@ -257,13 +257,18 @@ function Dobra() {
 
   return (
     <div ref={ref} className="relative min-h-[100dvh] overflow-hidden">
+      {/* Céu: fica atrás do canvas, que é transparente. A cor do horizonte é
+          a mesma da neblina do shader, então o campo dissolve no céu. */}
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,#8fbcd9_0%,#b9d4e2_42%,#dfe9ea_62%,#dfe9ea_100%)]" />
+
       <GrassField className="absolute inset-x-0 bottom-0 top-0 h-full w-full" />
 
-      {/* Duas máscaras: o topo abre espaço para o menu, a base para a
-          manchete. Entre as duas fica a faixa em que a crista aparece. */}
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(5,16,11,0.92)_0%,rgba(5,16,11,0.55)_12%,transparent_26%)]" />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,#05100b_0%,rgba(5,16,11,0.94)_30%,rgba(5,16,11,0.72)_46%,rgba(5,16,11,0.3)_58%,transparent_70%)]" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(140%_95%_at_50%_52%,transparent_45%,rgba(5,16,11,0.5)_100%)]" />
+      {/* Sol baixo à esquerda, para casar com a direção da luz no shader. */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_45%_at_22%_38%,rgba(255,244,214,0.5)_0%,transparent_62%)]" />
+
+      {/* A dobra é o único trecho claro do site. Este degradê leva o dia de
+          volta ao escuro do restante, sem emenda visível. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[34%] bg-[linear-gradient(to_top,#05100b_0%,rgba(5,16,11,0.86)_38%,rgba(5,16,11,0.42)_68%,transparent_100%)]" />
 
       <motion.div
         style={reduz ? undefined : { y, opacity: fade }}
@@ -273,25 +278,28 @@ function Dobra() {
           <div className="flex items-center gap-2.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={asset("/coope-mark.png")} alt="" className="h-7 w-7 rounded-lg" />
-            <span className="text-[15px] font-semibold tracking-tight">Coope</span>
+            <span className="text-[15px] font-semibold tracking-tight text-[#0d1f16]">Coope</span>
           </div>
-          <nav className="hidden items-center gap-8 text-[13.5px] text-[--tinta-2] md:flex">
-            <a href="#mercado" className="transition-colors hover:text-[--tinta]">Mercado</a>
-            <a href="#tese" className="transition-colors hover:text-[--tinta]">Tese</a>
-            <a href="#arquitetura" className="transition-colors hover:text-[--tinta]">Arquitetura</a>
-            <a href="#produto" className="transition-colors hover:text-[--tinta]">Produto</a>
-            <a href="#negocio" className="transition-colors hover:text-[--tinta]">Negócio</a>
+          <nav className="hidden items-center gap-8 text-[13.5px] text-[#20402f] md:flex">
+            <a href="#mercado" className="transition-colors hover:text-[#04130b]">Mercado</a>
+            <a href="#tese" className="transition-colors hover:text-[#04130b]">Tese</a>
+            <a href="#arquitetura" className="transition-colors hover:text-[#04130b]">Arquitetura</a>
+            <a href="#produto" className="transition-colors hover:text-[#04130b]">Produto</a>
+            <a href="#negocio" className="transition-colors hover:text-[#04130b]">Negócio</a>
           </nav>
           <Link
             href="/app"
-            className="rounded-full border border-[--linha] px-4 py-2 text-[13px] font-medium transition-colors hover:border-[--acento] hover:text-[--acento]"
+            className="rounded-full border border-[#0d1f16]/25 bg-white/35 px-4 py-2 text-[13px] font-medium text-[#0d1f16] backdrop-blur-md transition-colors hover:border-[#0d1f16]/50"
           >
             Abrir o app
           </Link>
         </header>
 
         <div className="mx-auto w-full max-w-[1180px]">
-          <p className="rotulo mb-6">Do agro, para o agro</p>
+          {/* Vidro fosco escuro: mantém o texto claro legível sobre a lavoura
+              iluminada, sem precisar escurecer a cena inteira. */}
+          <div className="max-w-[760px] rounded-[26px] border border-white/15 bg-[rgba(6,20,13,0.42)] px-7 py-9 shadow-[0_24px_70px_-30px_rgba(0,0,0,0.7)] backdrop-blur-xl md:px-10 md:py-11">
+          <p className="rotulo rotulo-dobra mb-6">Do agro, para o agro</p>
 
           <h1 className="display max-w-[16ch]">
             <RevealText texto="Crédito rural em horas," />
@@ -328,6 +336,7 @@ function Dobra() {
               Ler a tese
             </a>
           </motion.div>
+          </div>
         </div>
       </motion.div>
     </div>

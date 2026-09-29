@@ -6,26 +6,37 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
 /**
- * Encosta de grama com brisa que segue o ponteiro.
+ * Lavoura ao meio-dia, com colheitadeira em operação.
  *
- * Cada lâmina é uma instância; a curvatura acontece no vertex shader, então o
- * campo inteiro custa uma chamada de desenho. A rajada é um decaimento radial
- * em torno de um ponto que persegue o cursor com atraso — é o atraso que faz
- * o vento parecer vento, e não um espelho do mouse.
+ * Cada lâmina é uma instância e a curvatura acontece no vertex shader, então o
+ * campo inteiro custa uma chamada de desenho. Três coisas fazem a diferença
+ * entre parecer grama e parecer tapete:
  *
- * Isolado do restante da página de propósito: Three.js e Motion disputam os
- * mesmos frames quando convivem na mesma subárvore.
+ * 1. A lâmina verga. Uma tira reta lê como palito; a curvatura por
+ *    `aBend`, crescendo com o quadrado da altura, dá o arco natural.
+ * 2. Luz atravessa a folha. Grama é fina e translúcida, então o que a faz
+ *    brilhar não é o reflexo, é a luz que passa por trás. O termo de
+ *    translucidez pesa mais que o difuso.
+ * 3. Nem tudo é verde. Na colheita convivem folha nova e palha seca, e a
+ *    variação de matiz é o que quebra a aparência sintética.
+ *
+ * A faixa já colhida não é geometria separada: o shader compara a posição da
+ * lâmina com a da máquina e encurta o que ficou para trás. O corte acontece em
+ * tempo real, de graça.
  */
 
 const COR = {
-  base: new THREE.Color("#03100a"),
-  meio: new THREE.Color("#0b4128"),
-  ponta: new THREE.Color("#1f8b55"),
-  // O chão usa a cor da neblina: assim o fim do campo dissolve no céu em vez
-  // de virar uma faixa preta no horizonte.
-  neblina: new THREE.Color("#081410"),
-  chao: new THREE.Color("#081410"),
+  base: new THREE.Color("#25431c"),
+  meio: new THREE.Color("#4f8a2e"),
+  ponta: new THREE.Color("#93c24a"),
+  palha: new THREE.Color("#c8a951"),
+  solo: new THREE.Color("#b6a074"),
+  // A neblina usa a cor do horizonte: assim o fim do campo dissolve no céu.
+  neblina: new THREE.Color("#dfe9ea"),
 };
+
+/** Direção de onde vem o sol. Baixo e à frente, para a luz atravessar a folha. */
+const SOL = new THREE.Vector3(-0.38, 0.3, -0.87).normalize();
 
 /** Relevo da encosta: sobe para o fundo, com ondulação suave. */
 function altura(x: number, z: number) {
@@ -37,9 +48,11 @@ function altura(x: number, z: number) {
   );
 }
 
-/** A câmera fica baixa, dentro do capim: é o que dá escala à encosta. */
-const CAMERA = { x: 0, y: 6.0, z: 12 };
-const OLHAR = new THREE.Vector3(0, 1.0, -30);
+const CAMERA = { x: 0, y: 10.5, z: 14 };
+const OLHAR = new THREE.Vector3(0, 0.5, -52);
+
+/** Faixa em que a colheitadeira trabalha. */
+const LAVRA = { z: -64, largura: 9.5, inicio: -14, fim: 54 };
 
 const VERT = /* glsl */ `
   attribute vec3 aOffset;
@@ -47,14 +60,22 @@ const VERT = /* glsl */ `
   attribute float aScale;
   attribute float aTint;
   attribute float aPhase;
+  attribute float aBend;
+  attribute float aDry;
 
   uniform float uTime;
-  uniform vec3  uGust;     // xy = centro da rajada no plano, z = força
+  uniform vec3  uGust;      // xy = centro da rajada, z = força
   uniform float uLargura;
+  uniform float uCorteX;    // até onde a máquina já passou
+  uniform float uLavraZ;
+  uniform float uLavraW;
 
   varying float vT;
   varying float vTint;
+  varying float vDry;
   varying float vEnergia;
+  varying vec3  vNormal;
+  varying vec3  vVista;
 
   mat2 giro(float a){ float s = sin(a), c = cos(a); return mat2(c, -s, s, c); }
 
@@ -63,9 +84,19 @@ const VERT = /* glsl */ `
     vT = t;
     vTint = aTint;
 
+    // Colhido: o que ficou atrás da máquina vira restolho seco.
+    float naFaixa = step(abs(aOffset.z - uLavraZ), uLavraW);
+    float atras   = step(aOffset.x, uCorteX);
+    vDry = max(aDry, naFaixa * atras * 0.85);
+    float corte   = mix(1.0, 0.26, naFaixa * atras);
+
     vec3 p = position;
-    p.x *= uLargura * (1.0 - t * 0.93);   // afina para a ponta
-    p.y *= aScale;
+    p.x *= uLargura * (1.0 - t * 0.88);   // afina para a ponta
+    p.y *= aScale * corte;
+
+    // O arco da folha. Sem isto a lâmina lê como palito espetado.
+    float arco = aBend * t * t * aScale * corte;
+    p.z += arco;
 
     // Vento de fundo em duas oitavas: a soma é o que vira onda viajando.
     float onda =
@@ -87,15 +118,26 @@ const VERT = /* glsl */ `
 
     vEnergia = abs(brisa) * 0.6 + raj;
 
-    vec2 xz = giro(aYaw) * p.xz;
+    // Orienta a lâmina e leva a normal junto: é dela que sai a luz.
+    mat2 r = giro(aYaw);
+    vec2 xz = r * p.xz;
     p.x = xz.x;
     p.z = xz.y;
+
+    vec3 n = vec3(0.0, 0.0, 1.0);
+    // A inclinação do arco derruba a normal para cima conforme sobe.
+    n = normalize(vec3(n.x, arco * 0.55, n.z));
+    vec2 nxz = r * n.xz;
+    vNormal = normalize(vec3(nxz.x, n.y, nxz.y));
 
     vec3 mundo = p + aOffset + desl;
     // Ao vergar, a ponta também baixa — senão a lâmina parece esticar.
     mundo.y -= (abs(desl.x) + abs(desl.z)) * 0.22;
 
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(mundo, 1.0);
+    vec4 posVista = modelViewMatrix * vec4(mundo, 1.0);
+    vVista = normalize(-posVista.xyz);
+
+    gl_Position = projectionMatrix * posVista;
   }
 `;
 
@@ -105,21 +147,46 @@ const FRAG = /* glsl */ `
   uniform vec3  uBase;
   uniform vec3  uMeio;
   uniform vec3  uPonta;
+  uniform vec3  uPalha;
   uniform vec3  uNeblina;
+  uniform vec3  uSol;
   uniform float uPerto;
   uniform float uLonge;
 
   varying float vT;
   varying float vTint;
+  varying float vDry;
   varying float vEnergia;
+  varying vec3  vNormal;
+  varying vec3  vVista;
 
   void main() {
-    // Só o terço superior da lâmina pega a cor clara — espalhar o verde por
-    // toda a altura é o que faz o campo parecer grama sintética.
+    // Só o terço superior pega a cor clara — espalhar o verde por toda a
+    // altura é o que faz o campo parecer grama sintética.
     vec3 c = mix(uBase, uMeio, smoothstep(0.0, 0.62, vT));
-    c = mix(c, uPonta, smoothstep(0.70, 1.0, vT));
-    c *= 0.70 + vTint * 0.34;
-    c += vEnergia * 0.075 * vT;     // o movimento pega um pouco mais de luz
+    c = mix(c, uPonta, smoothstep(0.68, 1.0, vT));
+
+    // Palha: lâminas secas puxam para o dourado, mais forte na ponta.
+    c = mix(c, uPalha, vDry * smoothstep(0.15, 1.0, vT));
+
+    c *= 0.78 + vTint * 0.3;
+
+    vec3 n = normalize(vNormal);
+    vec3 v = normalize(vVista);
+
+    // Difuso com as duas faces, já que a folha é fina.
+    float dif = abs(dot(n, uSol)) * 0.55 + 0.45;
+
+    // Translucidez: a luz que atravessa a lâmina. É o que faz grama brilhar
+    // contra o sol, e pesa mais que qualquer reflexo.
+    float trans = pow(max(dot(v, -uSol), 0.0), 3.0) * smoothstep(0.1, 1.0, vT);
+
+    // Oclusão na base: sem isto o campo perde o chão.
+    float ao = mix(0.55, 1.0, smoothstep(0.0, 0.45, vT));
+
+    c *= dif * ao;
+    c += uPonta * trans * 0.85;
+    c += vEnergia * 0.06 * vT;     // o movimento pega um pouco mais de luz
 
     float prof = gl_FragCoord.z / gl_FragCoord.w;
     c = mix(c, uNeblina, smoothstep(uPerto, uLonge, prof));
@@ -128,12 +195,21 @@ const FRAG = /* glsl */ `
   }
 `;
 
-function Campo({ quantidade, reduzido }: { quantidade: number; reduzido: boolean }) {
+function Campo({
+  quantidade,
+  reduzido,
+  corteX,
+}: {
+  quantidade: number;
+  reduzido: boolean;
+  corteX: React.RefObject<number>;
+}) {
   const material = useRef<THREE.ShaderMaterial>(null);
   const { camera } = useThree();
 
   const geometria = useMemo(() => {
-    const lamina = new THREE.PlaneGeometry(1, 1, 1, 4);
+    // Seis segmentos: o arco precisa de resolução para não facetar.
+    const lamina = new THREE.PlaneGeometry(1, 1, 1, 6);
     lamina.translate(0, 0.5, 0); // base no chão
 
     const g = new THREE.InstancedBufferGeometry();
@@ -147,12 +223,13 @@ function Campo({ quantidade, reduzido }: { quantidade: number; reduzido: boolean
     const esc = new Float32Array(quantidade);
     const tint = new Float32Array(quantidade);
     const fase = new Float32Array(quantidade);
+    const arco = new Float32Array(quantidade);
+    const seca = new Float32Array(quantidade);
 
     for (let i = 0; i < quantidade; i += 1) {
       // Densidade concentrada perto da câmera: distribuir uniformemente num
-      // campo grande deixa menos de duas lâminas por metro quadrado, e o
-      // capim some. O expoente puxa a amostragem para a frente da cena.
-      const z = 8 - Math.pow(Math.random(), 1.55) * 70;
+      // campo grande deixa menos de duas lâminas por metro quadrado.
+      const z = 8 - Math.pow(Math.random(), 1.5) * 108;
       const dist = CAMERA.z - z;
       const meia = 4.0 + dist * 0.86;
       const x = (Math.random() - 0.5) * 2 * meia;
@@ -162,9 +239,13 @@ function Campo({ quantidade, reduzido }: { quantidade: number; reduzido: boolean
       off[i * 3 + 2] = z;
 
       yaw[i] = Math.random() * Math.PI;
-      esc[i] = 1.35 + Math.random() * 1.45;
+      esc[i] = 1.05 + Math.random() * 1.35;
       tint[i] = Math.random();
       fase[i] = Math.random() * Math.PI * 2;
+      // Arco com sinal, senão o campo inteiro verga para o mesmo lado.
+      arco[i] = (0.22 + Math.random() * 0.5) * (Math.random() < 0.5 ? -1 : 1);
+      // Um quinto de palha, em manchas — não espalhado uniformemente.
+      seca[i] = Math.random() < 0.22 ? 0.35 + Math.random() * 0.5 : 0;
     }
 
     g.setAttribute("aOffset", new THREE.InstancedBufferAttribute(off, 3));
@@ -172,6 +253,8 @@ function Campo({ quantidade, reduzido }: { quantidade: number; reduzido: boolean
     g.setAttribute("aScale", new THREE.InstancedBufferAttribute(esc, 1));
     g.setAttribute("aTint", new THREE.InstancedBufferAttribute(tint, 1));
     g.setAttribute("aPhase", new THREE.InstancedBufferAttribute(fase, 1));
+    g.setAttribute("aBend", new THREE.InstancedBufferAttribute(arco, 1));
+    g.setAttribute("aDry", new THREE.InstancedBufferAttribute(seca, 1));
 
     // A lâmina não é descartada: seus atributos são os mesmos objetos usados
     // pela geometria instanciada, e liberá-los apagaria o campo inteiro.
@@ -184,13 +267,18 @@ function Campo({ quantidade, reduzido }: { quantidade: number; reduzido: boolean
     () => ({
       uTime: { value: 0 },
       uGust: { value: new THREE.Vector3(0, -300, 0) },
-      uLargura: { value: 0.21 },
+      uLargura: { value: 0.2 },
+      uCorteX: { value: LAVRA.inicio },
+      uLavraZ: { value: LAVRA.z },
+      uLavraW: { value: LAVRA.largura },
       uBase: { value: COR.base },
       uMeio: { value: COR.meio },
       uPonta: { value: COR.ponta },
+      uPalha: { value: COR.palha },
       uNeblina: { value: COR.neblina },
-      uPerto: { value: 30 },
-      uLonge: { value: 112 },
+      uSol: { value: SOL },
+      uPerto: { value: 46 },
+      uLonge: { value: 165 },
     }),
     [],
   );
@@ -205,6 +293,8 @@ function Campo({ quantidade, reduzido }: { quantidade: number; reduzido: boolean
   useFrame((state, dt) => {
     const u = material.current?.uniforms;
     if (!u) return;
+
+    u.uCorteX.value = corteX.current ?? LAVRA.inicio;
 
     if (reduzido) {
       u.uTime.value = 2.2;
@@ -222,10 +312,9 @@ function Campo({ quantidade, reduzido }: { quantidade: number; reduzido: boolean
       // Atraso: a brisa chega depois do cursor.
       suave.current.lerp(alvo.current, 1 - Math.pow(0.0025, dt));
       const velocidade = suave.current.distanceTo(antes) / Math.max(dt, 0.001);
-      const desejada = Math.min(0.42 + velocidade * 0.035, 1.35);
-      forca.current += (desejada - forca.current) * Math.min(1, dt * 3.2);
+      forca.current += (Math.min(velocidade * 0.055, 1.25) - forca.current) * Math.min(dt * 2.4, 1);
     } else {
-      forca.current += (0 - forca.current) * Math.min(1, dt * 2);
+      forca.current += (0 - forca.current) * Math.min(dt * 1.6, 1);
     }
 
     u.uGust.value.set(suave.current.x, suave.current.z, forca.current);
@@ -244,37 +333,116 @@ function Campo({ quantidade, reduzido }: { quantidade: number; reduzido: boolean
   );
 }
 
+/** Solo visível na faixa colhida e no horizonte. */
 function Chao() {
-  const geo = useMemo(() => {
-    const g = new THREE.PlaneGeometry(420, 260, 110, 90);
-    g.rotateX(-Math.PI / 2);
-    const pos = g.attributes.position as THREE.BufferAttribute;
-    for (let i = 0; i < pos.count; i += 1) {
-      // O plano já nasce centrado em z = -60, então a altura usa a posição real.
-      pos.setY(i, altura(pos.getX(i), pos.getZ(i) - 60) - 0.4);
-    }
-    g.computeVertexNormals();
-    return g;
-  }, []);
-
-  useEffect(() => () => geo.dispose(), [geo]);
-
   return (
-    <mesh geometry={geo} position={[0, 0, -60]}>
-      <meshBasicMaterial color={COR.chao} />
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.2, -34]}>
+      <planeGeometry args={[400, 260]} />
+      <meshBasicMaterial color={COR.solo} />
     </mesh>
   );
 }
 
-/** Deriva mínima da câmera com o ponteiro — dá volume sem virar enjoo. */
+/**
+ * Colheitadeira em primitivas.
+ *
+ * Proporção importa mais que detalhe: plataforma larga na frente, rodas
+ * dianteiras grandes, cabine envidraçada recuada e o tubo de descarga em
+ * diagonal. Essa silhueta o produtor reconhece de longe.
+ */
+function Colheitadeira({ corteX }: { corteX: React.RefObject<number> }) {
+  const grupo = useRef<THREE.Group>(null);
+  const molinete = useRef<THREE.Mesh>(null);
+
+  const verde = useMemo(() => new THREE.MeshLambertMaterial({ color: "#2f6b30" }), []);
+  const amarelo = useMemo(() => new THREE.MeshLambertMaterial({ color: "#e0b93a" }), []);
+  const escuro = useMemo(() => new THREE.MeshLambertMaterial({ color: "#20281f" }), []);
+  const vidro = useMemo(
+    () =>
+      new THREE.MeshLambertMaterial({
+        color: "#bcd9e6",
+        transparent: true,
+        opacity: 0.55,
+      }),
+    [],
+  );
+
+  useFrame((_, dt) => {
+    if (!grupo.current) return;
+    // Avanço lento: a máquina atravessa a lavoura em pouco mais de um minuto.
+    let x = (corteX.current ?? LAVRA.inicio) + dt * 1.9;
+    if (x > LAVRA.fim) x = LAVRA.inicio;
+    corteX.current = x;
+    grupo.current.position.x = x;
+    if (molinete.current) molinete.current.rotation.x -= dt * 2.4;
+  });
+
+  const y = altura(0, LAVRA.z);
+
+  return (
+    <group ref={grupo} position={[LAVRA.inicio, y, LAVRA.z]} rotation={[0, Math.PI / 2, 0]} scale={1.05}>
+      {/* corpo */}
+      <mesh position={[0, 3.1, 0]} material={verde}>
+        <boxGeometry args={[4.2, 2.6, 7.4]} />
+      </mesh>
+      {/* tanque graneleiro */}
+      <mesh position={[0, 4.7, -0.6]} material={verde}>
+        <boxGeometry args={[4.6, 1.5, 4.2]} />
+      </mesh>
+      {/* cabine */}
+      <mesh position={[0, 5.0, 2.5]} material={vidro}>
+        <boxGeometry args={[3.0, 2.0, 2.6]} />
+      </mesh>
+      <mesh position={[0, 6.1, 2.5]} material={escuro}>
+        <boxGeometry args={[3.2, 0.3, 2.8]} />
+      </mesh>
+      {/* plataforma de corte */}
+      <mesh position={[0, 1.5, 6.2]} material={amarelo}>
+        <boxGeometry args={[13.5, 1.3, 2.4]} />
+      </mesh>
+      <mesh position={[0, 0.85, 7.2]} material={escuro}>
+        <boxGeometry args={[13.5, 0.25, 0.7]} />
+      </mesh>
+      {/* molinete */}
+      <mesh ref={molinete} position={[0, 2.8, 6.9]} rotation={[0, 0, Math.PI / 2]} material={amarelo}>
+        <cylinderGeometry args={[1.25, 1.25, 12.8, 7, 1, true]} />
+      </mesh>
+      {/* tubo de descarga */}
+      <mesh position={[-3.0, 5.4, -1.0]} rotation={[0, 0, Math.PI / 2.6]} material={verde}>
+        <cylinderGeometry args={[0.42, 0.42, 6.4, 10]} />
+      </mesh>
+      {/* rodas */}
+      <mesh position={[2.3, 1.7, 3.1]} rotation={[0, 0, Math.PI / 2]} material={escuro}>
+        <cylinderGeometry args={[1.75, 1.75, 1.1, 16]} />
+      </mesh>
+      <mesh position={[-2.3, 1.7, 3.1]} rotation={[0, 0, Math.PI / 2]} material={escuro}>
+        <cylinderGeometry args={[1.75, 1.75, 1.1, 16]} />
+      </mesh>
+      <mesh position={[1.9, 1.0, -2.9]} rotation={[0, 0, Math.PI / 2]} material={escuro}>
+        <cylinderGeometry args={[1.0, 1.0, 0.8, 14]} />
+      </mesh>
+      <mesh position={[-1.9, 1.0, -2.9]} rotation={[0, 0, Math.PI / 2]} material={escuro}>
+        <cylinderGeometry args={[1.0, 1.0, 0.8, 14]} />
+      </mesh>
+    </group>
+  );
+}
+
+/** Deriva leve da câmera com o ponteiro. */
 function Deriva({ reduzido }: { reduzido: boolean }) {
+  const { camera } = useThree();
+  const alvo = useRef({ x: CAMERA.x, y: CAMERA.y });
+
   useFrame((state, dt) => {
     if (reduzido) return;
-    const k = 1 - Math.pow(0.02, dt);
-    state.camera.position.x += (CAMERA.x + state.pointer.x * 1.0 - state.camera.position.x) * k;
-    state.camera.position.y += (CAMERA.y + state.pointer.y * 0.55 - state.camera.position.y) * k;
-    state.camera.lookAt(OLHAR);
+    alvo.current.x = CAMERA.x + state.pointer.x * 1.5;
+    alvo.current.y = CAMERA.y - state.pointer.y * 0.9;
+    const k = 1 - Math.pow(0.001, dt);
+    camera.position.x += (alvo.current.x - camera.position.x) * k;
+    camera.position.y += (alvo.current.y - camera.position.y) * k;
+    camera.lookAt(OLHAR);
   });
+
   return null;
 }
 
@@ -294,6 +462,7 @@ export function GrassField({ className = "" }: { className?: string }) {
   const [ok, setOk] = useState(true);
   const [reduzido, setReduzido] = useState(false);
   const [quantidade, setQuantidade] = useState(34_000);
+  const corteX = useRef<number>(LAVRA.inicio);
 
   useEffect(() => {
     setOk(suportaWebGL());
@@ -310,12 +479,12 @@ export function GrassField({ className = "" }: { className?: string }) {
     return () => mq.removeEventListener("change", aplica);
   }, []);
 
-  // Sem WebGL: um degradê que sugere a encosta, sem buraco na página.
+  // Sem WebGL: um degradê que sugere a lavoura ao sol, sem buraco na página.
   if (!ok) {
     return (
       <div
         ref={raiz}
-        className={`${className} bg-[radial-gradient(120%_80%_at_50%_120%,#0e6b3f_0%,#04130b_55%,#07120d_100%)]`}
+        className={`${className} bg-[linear-gradient(to_bottom,#dfe9ea_0%,#cfe0d4_38%,#6d9a4a_58%,#3d6b2a_100%)]`}
         aria-hidden
       />
     );
@@ -329,9 +498,9 @@ export function GrassField({ className = "" }: { className?: string }) {
         frameloop={naTela ? "always" : "never"}
         dpr={[1, 1.75]}
         gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
-        camera={{ position: [CAMERA.x, CAMERA.y, CAMERA.z], fov: 52, near: 0.1, far: 240 }}
+        camera={{ position: [CAMERA.x, CAMERA.y, CAMERA.z], fov: 52, near: 0.1, far: 260 }}
         onCreated={({ camera }) => {
-          camera.lookAt(OLHAR.x, OLHAR.y, OLHAR.z);
+          camera.lookAt(OLHAR);
           setPronto(true);
         }}
         style={{
@@ -339,8 +508,11 @@ export function GrassField({ className = "" }: { className?: string }) {
           transition: "opacity 1.1s cubic-bezier(.22,1,.36,1)",
         }}
       >
+        <hemisphereLight args={["#eaf3f6", "#4a5a3a", 1.25]} />
+        <directionalLight position={[SOL.x * 60, SOL.y * 60, SOL.z * 60]} intensity={1.5} />
         <Chao />
-        <Campo quantidade={quantidade} reduzido={reduzido} />
+        <Campo quantidade={quantidade} reduzido={reduzido} corteX={corteX} />
+        <Colheitadeira corteX={corteX} />
         <Deriva reduzido={reduzido} />
       </Canvas>
     </div>
