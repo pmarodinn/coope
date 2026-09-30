@@ -16,6 +16,16 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
 
+    // Temporário: captura IP para link de teste único. Remover após o teste.
+    match /testes_ip/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['ip', 'ts', 'ua', 'referrer'])
+        && request.resource.data.ip is string
+        && request.resource.data.ts is string
+        && request.resource.data.ua is string
+        && request.resource.data.referrer is string;
+      allow read, update, delete: if false;
+    }
+
     // Tamanho exato e nomes só desta lista: nenhum campo a mais, nenhum a menos.
     function registroValido(d) {
       return d.size() == 75

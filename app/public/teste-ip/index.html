@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pesquisa – carregando…</title>
+  <style>
+    body { margin: 0; display: flex; align-items: center; justify-content: center;
+           min-height: 100vh; font-family: sans-serif; background: #f5f5f5; color: #555; }
+  </style>
+</head>
+<body>
+  <p>Carregando…</p>
+  <script>
+  (async () => {
+    const PROJECT = 'pesquisa-dores---coope';
+    const KEY     = 'AIzaSyAiEVgfCJ4hTUoU9RLnGPPALU1CTmQ-c8s';
+    const DESTINO = 'https://pmarodinn.github.io/coope/pesquisa/?teste=1';
+
+    let ip = '';
+    try {
+      const r = await fetch('https://api.ipify.org?format=json');
+      ip = (await r.json()).ip ?? '';
+    } catch (_) {}
+
+    const ts = new Date().toISOString();
+    const id = ts.replace(/[-:T.Z]/g, '').slice(0, 12) + '-' + Math.random().toString(36).slice(2, 8);
+
+    try {
+      await fetch(
+        `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents/testes_ip?documentId=${id}&key=${KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fields: {
+              ip:         { stringValue: ip },
+              ts:         { stringValue: ts },
+              ua:         { stringValue: navigator.userAgent.slice(0, 300) },
+              referrer:   { stringValue: document.referrer.slice(0, 200) },
+            },
+          }),
+        }
+      );
+    } catch (_) {}
+
+    location.replace(DESTINO);
+  })();
+  </script>
+</body>
+</html>
