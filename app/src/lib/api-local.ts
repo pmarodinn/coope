@@ -89,7 +89,15 @@ export function instalarApiLocal() {
 
   // Primeira visita da sessão abre com a jornada já andada; "R$ 0" na abertura
   // faz um app financeiro parecer vazio.
-  if (sessionStorage.getItem(CHAVE)) restaurar();
+  // Só tocar em sessionStorage já lança exceção em navegadores que bloqueiam
+  // armazenamento; aqui isso derrubava o pacote inteiro e a página ficava em branco.
+  let temEstado = false;
+  try {
+    temEstado = sessionStorage.getItem(CHAVE) !== null;
+  } catch {
+    /* sem armazenamento: a demo roda só em memória */
+  }
+  if (temEstado) restaurar();
   else {
     semear();
     salvar();
@@ -133,8 +141,13 @@ export function instalarApiLocal() {
     }
 
     const r = await manipulador(corpo);
-    if (rota === "/api/reset") sessionStorage.removeItem(CHAVE);
-    else salvar();
+    if (rota === "/api/reset") {
+      try {
+        sessionStorage.removeItem(CHAVE);
+      } catch {
+        /* sem armazenamento: nada a limpar */
+      }
+    } else salvar();
 
     return new Response(JSON.stringify(r.corpo), {
       status: r.status,

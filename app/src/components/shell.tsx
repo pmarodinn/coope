@@ -19,8 +19,15 @@ function Menu() {
   const [tema, setTema] = useState<"dark" | "light">("light");
   const [indo, setIndo] = useState(false);
 
+  // localStorage lança exceção em navegador que bloqueia armazenamento; o tema
+  // é só conveniência, então sem armazenamento o app fica no claro e segue.
   useEffect(() => {
-    const salvo = (localStorage.getItem("coope-tema") as "dark" | "light" | null) ?? "light";
+    let salvo: "dark" | "light" = "light";
+    try {
+      salvo = localStorage.getItem("coope-tema") === "dark" ? "dark" : "light";
+    } catch {
+      /* fica no claro */
+    }
     document.documentElement.setAttribute("data-theme", salvo);
     setTema(salvo);
   }, []);
@@ -29,7 +36,11 @@ function Menu() {
     const novo = tema === "dark" ? "light" : "dark";
     setTema(novo);
     document.documentElement.setAttribute("data-theme", novo);
-    localStorage.setItem("coope-tema", novo);
+    try {
+      localStorage.setItem("coope-tema", novo);
+    } catch {
+      /* vale só nesta visita */
+    }
   }
 
   return (
