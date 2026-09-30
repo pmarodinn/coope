@@ -1,28 +1,35 @@
 /**
  * Pesquisa de mercado com produtores: perguntas, código de resposta e mensagem.
  *
+ * O objetivo é descobrir dores, gastos e como o produtor trabalha hoje, e não
+ * sondar interesse num serviço que ele ainda não conhece. Por isso as perguntas
+ * falam do que ele já faz, já paga e já sofre.
+ *
  * Não há servidor nem banco. Cada resposta vira um código curto e legível,
- * como COOPE1-K3M9P2-7QXH4T-BN5RA0, que carrega todas as escolhas. O produtor
- * manda o código (dentro de uma mensagem legível) por WhatsApp, e a página de
+ * como COOPE2-K3M9P2-7QXH4T-..., que carrega todas as escolhas. O produtor manda
+ * o código (dentro de uma mensagem legível) por WhatsApp, e a página de
  * resultados desmonta os códigos e faz as contas.
  *
- * Duas escolhas de desenho:
+ * Três escolhas de desenho:
  *
- * 1. Só perguntas fechadas. Não existe campo de texto, então não há como entrar
- *    lixo nem dado pessoal por engano. Um código só é aceito se cada valor cair
- *    dentro das opções e o selo de verificação fechar.
+ * 1. Só perguntas fechadas, com uma única exceção curta: o campo de "Outras"
+ *    culturas. Ele aceita só letras, espaço e hífen, até 24 caracteres. Sem
+ *    dígitos não há como colocar telefone ou CPF, e sem mais espaço não há como
+ *    escrever um recado. Um código só é aceito se cada valor cair dentro das
+ *    opções e o selo de verificação fechar.
  *
  * 2. O código é bit-packing, não JSON em base64. Cada pergunta ocupa só os bits
- *    de que precisa (uma escolha entre 15 opções cabe em 4 bits; uma múltipla
- *    com 9 opções é uma máscara de 9 bits). O resultado é curto o bastante para
- *    ser lido em voz alta, e o alfabeto Crockford evita I/L/O/U, que se
- *    confundem com 1/0 quando alguém copia à mão.
+ *    de que precisa, e o alfabeto Crockford evita I/L/O/U, que se confundem com
+ *    1/0 quando alguém copia à mão.
+ *
+ * 3. A ordem importa onde o produtor a dá. Em estados e culturas, a ordem dos
+ *    toques é a ordem de tamanho: o primeiro é o maior.
  *
  * Se o questionário mudar (opções ou ordem), suba VERSAO: códigos antigos passam
  * a ser recusados em vez de serem lidos errado.
  */
 
-export const VERSAO = 1;
+export const VERSAO = 2;
 
 export interface Opcao {
   rotulo: string;
@@ -35,10 +42,14 @@ export interface Opcao {
 export interface Pergunta {
   id: string;
   titulo: string;
-  dica?: string;
+  dica?: string | ((r: Respostas) => string);
   tipo: "unica" | "multipla";
-  /** Limite de marcações nas perguntas múltiplas. */
+  /** Limite de marcações nas perguntas múltiplas. Obrigatório quando ordenada. */
   max?: number;
+  /** A ordem dos toques importa: a primeira marcada é a maior. */
+  ordenada?: boolean;
+  /** Marcar esta opção abre um campo curto de escrita. */
+  escreve?: { opcao: number; max: number; rotulo: string; exemplo: string };
   colunas?: 1 | 2 | 3;
   opcoes: Opcao[];
 }
@@ -46,9 +57,11 @@ export interface Pergunta {
 export const PERGUNTAS: Pergunta[] = [
   {
     id: "uf",
-    titulo: "Em que estado fica a sua produção?",
-    dica: "A principal, se tiver mais de uma.",
-    tipo: "unica",
+    titulo: "Em quais estados fica a sua produção?",
+    dica: "Toque primeiro no estado onde você mais produz. A ordem dos toques vira a ordem.",
+    tipo: "multipla",
+    ordenada: true,
+    max: 5,
     colunas: 3,
     opcoes: ["MT", "MS", "GO", "PR", "RS", "SP", "MG", "BA", "SC", "TO", "MA", "PI", "PA", "RO", "Outro"].map(
       (rotulo) => ({ rotulo }),
@@ -56,11 +69,13 @@ export const PERGUNTAS: Pergunta[] = [
   },
   {
     id: "culturas",
-    titulo: "O que você mais produz?",
-    dica: "Escolha até 3.",
+    titulo: "O que você produz?",
+    dica: "Toque primeiro no que mais pesa na sua renda. A ordem dos toques vira a ordem.",
     tipo: "multipla",
-    max: 3,
+    ordenada: true,
+    max: 6,
     colunas: 2,
+    escreve: { opcao: 8, max: 24, rotulo: "Qual outra cultura?", exemplo: "sorgo, eucalipto…" },
     opcoes: [
       { rotulo: "Soja" },
       { rotulo: "Milho" },
@@ -76,7 +91,10 @@ export const PERGUNTAS: Pergunta[] = [
   {
     id: "area",
     titulo: "Quantos hectares você trabalha?",
-    dica: "Contando os arrendados.",
+    dica: (r) =>
+      Array.isArray(r.uf) && r.uf.length > 1
+        ? "Some todos os estados, contando os arrendados. Pode ser aproximado."
+        : "Contando os arrendados. Pode ser aproximado.",
     tipo: "unica",
     opcoes: [
       { rotulo: "Até 100 ha" },
@@ -112,6 +130,33 @@ export const PERGUNTAS: Pergunta[] = [
     ],
   },
   {
+    id: "controle",
+    titulo: "Como você controla o dinheiro da fazenda?",
+    tipo: "unica",
+    opcoes: [
+      { rotulo: "Sistema de gestão (ERP ou app)", curto: "sistema" },
+      { rotulo: "Planilha" },
+      { rotulo: "Caderno ou de cabeça", curto: "caderno/de cabeça" },
+      { rotulo: "O escritório de contabilidade cuida", curto: "escritório cuida" },
+      { rotulo: "Quase não controlo", curto: "quase nada" },
+    ],
+  },
+  {
+    id: "contador",
+    titulo: "Quanto você paga de contabilidade por mês?",
+    dica: "Escritório ou equipe própria. Valor aproximado.",
+    tipo: "unica",
+    opcoes: [
+      { rotulo: "Não pago", curto: "não paga" },
+      { rotulo: "Até R$ 1.000", curto: "até R$ 1 mil por mês" },
+      { rotulo: "De R$ 1.000 a 3.000", curto: "R$ 1 a 3 mil por mês" },
+      { rotulo: "De R$ 3.000 a 6.000", curto: "R$ 3 a 6 mil por mês" },
+      { rotulo: "De R$ 6.000 a 10.000", curto: "R$ 6 a 10 mil por mês" },
+      { rotulo: "Mais de R$ 10.000", curto: "mais de R$ 10 mil por mês" },
+      { rotulo: "Não sei", curto: "não sabe" },
+    ],
+  },
+  {
     id: "imposto",
     titulo: "Como você lida com o Imposto de Renda da fazenda?",
     tipo: "unica",
@@ -120,6 +165,19 @@ export const PERGUNTAS: Pergunta[] = [
       { rotulo: "Só descubro no fim do ano, sem susto", curto: "só no fim do ano, sem susto" },
       { rotulo: "Acompanho durante o ano", curto: "acompanha durante o ano" },
       { rotulo: "Deixo tudo com o contador", curto: "deixa com o contador" },
+    ],
+  },
+  {
+    id: "multas",
+    titulo: "Nos últimos 3 anos, quantas vezes você pagou multa ou juros por atraso?",
+    dica: "Imposto, conta ou parcela.",
+    tipo: "unica",
+    opcoes: [
+      { rotulo: "Nenhuma vez", curto: "nenhuma" },
+      { rotulo: "1 ou 2 vezes", curto: "1 ou 2 vezes" },
+      { rotulo: "3 a 5 vezes", curto: "3 a 5 vezes" },
+      { rotulo: "Mais de 5 vezes", curto: "mais de 5 vezes" },
+      { rotulo: "Não sei dizer", curto: "não sabe" },
     ],
   },
   {
@@ -151,6 +209,33 @@ export const PERGUNTAS: Pergunta[] = [
     ],
   },
   {
+    id: "taxa",
+    titulo: "Que taxa de juros você costuma pagar no crédito da safra?",
+    dica: "Por ano, somando tudo que cobram.",
+    tipo: "unica",
+    opcoes: [
+      { rotulo: "Menos de 10%", curto: "menos de 10% ao ano" },
+      { rotulo: "De 10% a 14%", curto: "10 a 14% ao ano" },
+      { rotulo: "De 14% a 18%", curto: "14 a 18% ao ano" },
+      { rotulo: "De 18% a 24%", curto: "18 a 24% ao ano" },
+      { rotulo: "Mais de 24%", curto: "mais de 24% ao ano" },
+      { rotulo: "Não sei", curto: "não sabe" },
+      { rotulo: "Não uso crédito", curto: "não usa crédito" },
+    ],
+  },
+  {
+    id: "negado",
+    titulo: "Nos últimos 3 anos, quantas vezes o crédito foi negado ou veio menor do que você precisava?",
+    tipo: "unica",
+    opcoes: [
+      { rotulo: "Nenhuma vez", curto: "nenhuma" },
+      { rotulo: "1 vez", curto: "1 vez" },
+      { rotulo: "2 ou 3 vezes", curto: "2 ou 3 vezes" },
+      { rotulo: "4 vezes ou mais", curto: "4 ou mais vezes" },
+      { rotulo: "Nunca pedi crédito", curto: "nunca pediu" },
+    ],
+  },
+  {
     id: "obstaculos",
     titulo: "O que mais atrapalha na hora de pedir crédito?",
     dica: "Escolha até 2.",
@@ -177,6 +262,30 @@ export const PERGUNTAS: Pergunta[] = [
     ],
   },
   {
+    id: "expansao",
+    titulo: "Nos próximos 2 anos, o que você pensa sobre aumentar a produção?",
+    tipo: "unica",
+    opcoes: [
+      { rotulo: "Já estou aumentando", curto: "já está aumentando" },
+      { rotulo: "Quero, mas falta dinheiro ou crédito", curto: "quer, falta crédito" },
+      { rotulo: "Quero, mas falta outra coisa (terra, máquina, gente)", curto: "quer, falta outra coisa" },
+      { rotulo: "Por ora não penso nisso", curto: "não pensa nisso" },
+      { rotulo: "Penso em reduzir", curto: "pensa em reduzir" },
+    ],
+  },
+  {
+    id: "tecnologia",
+    titulo: "O que você acha de usar tecnologia para cuidar do financeiro da fazenda?",
+    dica: "Notas, imposto, crédito.",
+    tipo: "unica",
+    opcoes: [
+      { rotulo: "Já uso e funciona bem", curto: "já usa" },
+      { rotulo: "Usaria, se fosse simples", curto: "usaria se fosse simples" },
+      { rotulo: "Só se alguém de confiança indicar", curto: "só se alguém confiável indicar" },
+      { rotulo: "Prefiro como está", curto: "prefere como está" },
+    ],
+  },
+  {
     id: "certificado",
     titulo: "Você tem certificado digital?",
     dica: "e-CPF ou e-CNPJ.",
@@ -188,84 +297,6 @@ export const PERGUNTAS: Pergunta[] = [
       { rotulo: "Nem sei o que é" },
     ],
   },
-  {
-    id: "dados",
-    titulo: "Deixaria a Coope ler suas notas fiscais e extratos?",
-    dica: "Só para calcular imposto e crédito. Você autoriza no app do banco e pode cortar quando quiser.",
-    tipo: "unica",
-    opcoes: [
-      { rotulo: "Sim, sem problema" },
-      { rotulo: "Sim, se alguém de confiança explicar" },
-      { rotulo: "Só se a cooperativa ou o contador indicar" },
-      { rotulo: "Não deixaria" },
-    ],
-  },
-  {
-    id: "prioridade",
-    titulo: "O que um sistema deveria resolver primeiro?",
-    dica: "Escolha até 2.",
-    tipo: "multipla",
-    max: 2,
-    opcoes: [
-      { rotulo: "Pagar menos imposto", curto: "pagar menos imposto" },
-      { rotulo: "Crédito mais rápido e barato", curto: "crédito rápido e barato" },
-      { rotulo: "Organizar notas e caixa", curto: "organizar notas e caixa" },
-      { rotulo: "Seguro que paga rápido", curto: "seguro que paga rápido" },
-      { rotulo: "Travar o preço de venda", curto: "travar preço de venda" },
-      { rotulo: "Ver o resultado de cada fazenda", curto: "resultado por fazenda" },
-    ],
-  },
-  {
-    id: "pagaImposto",
-    titulo: "Se um serviço economizasse imposto para você, quanto pagaria?",
-    dica: "De cada R$ 100 que você deixasse de pagar.",
-    tipo: "unica",
-    opcoes: [
-      { rotulo: "Nada, só de graça", curto: "nada" },
-      { rotulo: "R$ 5", curto: "R$ 5 a cada R$ 100" },
-      { rotulo: "R$ 10", curto: "R$ 10 a cada R$ 100" },
-      { rotulo: "R$ 15", curto: "R$ 15 a cada R$ 100" },
-      { rotulo: "R$ 20 ou mais", curto: "R$ 20+ a cada R$ 100" },
-    ],
-  },
-  {
-    id: "pagaCredito",
-    titulo: "Se o crédito saísse em poucas horas, quanto pagaria?",
-    dica: "Taxa sobre o valor do crédito.",
-    tipo: "unica",
-    opcoes: [
-      { rotulo: "Nada, só de graça", curto: "nada" },
-      { rotulo: "Até 1%" },
-      { rotulo: "Até 2%" },
-      { rotulo: "Até 3%" },
-      { rotulo: "Mais de 3%" },
-    ],
-  },
-  {
-    id: "influencia",
-    titulo: "Quem mais pesa na hora de adotar algo novo?",
-    dica: "Escolha até 2.",
-    tipo: "multipla",
-    max: 2,
-    opcoes: [
-      { rotulo: "Cooperativa ou revenda", curto: "cooperativa/revenda" },
-      { rotulo: "Contador" },
-      { rotulo: "Banco" },
-      { rotulo: "Outros produtores", curto: "outros produtores" },
-      { rotulo: "Família" },
-      { rotulo: "Decido sozinho", curto: "decide sozinho", exclusiva: true },
-    ],
-  },
-  {
-    id: "teste",
-    titulo: "Testaria de graça na próxima safra?",
-    tipo: "unica",
-    opcoes: [
-      { rotulo: "Sim, com certeza", curto: "sim" },
-      { rotulo: "Talvez, quero saber mais", curto: "talvez" },
-      { rotulo: "Não" },
-    ],
-  },
 ];
 
 export const porId = (id: string) => {
@@ -273,6 +304,16 @@ export const porId = (id: string) => {
   if (!p) throw new Error(`Pergunta inexistente: ${id}`);
   return p;
 };
+
+/* Regras do próprio questionário, conferidas ao carregar: errar aqui corromperia o código sem aviso. */
+const BITS_CONTAGEM = 3;
+for (const p of PERGUNTAS) {
+  if (p.ordenada && (p.tipo !== "multipla" || !p.max || p.max >= 1 << BITS_CONTAGEM)) {
+    throw new Error(`"${p.id}": ordenada exige múltipla com max de 1 a ${(1 << BITS_CONTAGEM) - 1}`);
+  }
+}
+const ESCRITA = PERGUNTAS.find((p) => p.escreve);
+if (PERGUNTAS.filter((p) => p.escreve).length > 1) throw new Error("O código suporta um campo de escrita só");
 
 /* ---------------- respostas ---------------- */
 
@@ -287,7 +328,7 @@ export function respostaValida(p: Pergunta, v: unknown): v is Valor {
   if (!Array.isArray(v) || v.length === 0 || !v.every(dentro)) return false;
   if (new Set(v).size !== v.length) return false;
   if (p.max !== undefined && v.length > p.max) return false;
-  if (v.length > 1 && v.some((i) => p.opcoes[i].exclusiva)) return false;
+  if (!p.ordenada && v.length > 1 && v.some((i) => p.opcoes[i].exclusiva)) return false;
   return true;
 }
 
@@ -295,20 +336,54 @@ export const respondida = (p: Pergunta, r: Respostas) => respostaValida(p, r[p.i
 
 export const completo = (r: Respostas) => PERGUNTAS.every((p) => respondida(p, r));
 
+export const dicaDe = (p: Pergunta, r: Respostas) => (typeof p.dica === "function" ? p.dica(r) : p.dica);
+
+/* ---------------- texto curto ---------------- */
+
+/** Letras (com ou sem acento), espaço e hífen. Serve para filtrar enquanto a pessoa digita. */
+export function filtrarEscrito(s: string, max: number): string {
+  return s
+    .replace(/[^\p{L} -]/gu, "")
+    .replace(/ {2,}/g, " ")
+    .replace(/^[ -]+/, "")
+    .slice(0, max);
+}
+
+/** Forma que vai para o código: minúsculas, sem acento, só a-z, espaço e hífen. */
+export function normalizarEscrito(s: string, max: number): string {
+  return s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z -]/g, "")
+    .replace(/ {2,}/g, " ")
+    .replace(/^[ -]+|[ -]+$/g, "")
+    .slice(0, max);
+}
+
 /* ---------------- código ---------------- */
 
 const ALFABETO = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"; // Crockford: sem I, L, O, U
+const ALFABETO_TEXTO = " abcdefghijklmnopqrstuvwxyz-"; // 28 símbolos, cabem em 5 bits
 const BITS_NONCE = 10;
+const BITS_TAMANHO_TEXTO = 5;
 const BITS_SELO = 12;
 
+const bitsDeIndice = (p: Pergunta) => Math.max(1, Math.ceil(Math.log2(p.opcoes.length)));
+
 const largura = (p: Pergunta) =>
-  p.tipo === "multipla" ? p.opcoes.length : Math.max(1, Math.ceil(Math.log2(p.opcoes.length)));
+  p.tipo === "unica"
+    ? bitsDeIndice(p)
+    : p.ordenada
+      ? BITS_CONTAGEM + p.max! * bitsDeIndice(p)
+      : p.opcoes.length;
 
 const BITS_DADOS = PERGUNTAS.reduce((soma, p) => soma + largura(p), 0);
+const BITS_ANTES_DO_TEXTO = BITS_DADOS + BITS_NONCE;
+const BITS_PREFIXO = BITS_ANTES_DO_TEXTO + (ESCRITA ? BITS_TAMANHO_TEXTO : 0);
 
-/** Quantos símbolos tem o código (sem o prefixo). */
-export const SIMBOLOS = Math.ceil((BITS_DADOS + BITS_NONCE + BITS_SELO) / 5);
-const BITS_TOTAL = SIMBOLOS * 5;
+/** Símbolos de que o leitor precisa para saber de que tamanho é o resto do código. */
+export const SIMBOLOS_PREFIXO = Math.ceil(BITS_PREFIXO / 5);
 
 /**
  * Sorteado uma vez por resposta. Sem ele, dois produtores com respostas
@@ -330,7 +405,7 @@ function selo(bits: number[]): number {
   return (h ^ (h >>> 12) ^ (h >>> 20)) & ((1 << BITS_SELO) - 1);
 }
 
-export function codificar(respostas: Respostas, nonce: number): string {
+export function codificar(respostas: Respostas, nonce: number, escrito = ""): string {
   const bits: number[] = [];
   const empurrar = (valor: number, n: number) => {
     for (let i = n - 1; i >= 0; i--) bits.push((valor >>> i) & 1);
@@ -339,22 +414,71 @@ export function codificar(respostas: Respostas, nonce: number): string {
   for (const p of PERGUNTAS) {
     const v = respostas[p.id];
     if (!respostaValida(p, v)) throw new Error(`Resposta inválida para "${p.id}"`);
-    empurrar(p.tipo === "unica" ? (v as number) : (v as number[]).reduce((m, i) => m | (1 << i), 0), largura(p));
+
+    if (p.tipo === "unica") empurrar(v as number, bitsDeIndice(p));
+    else if (p.ordenada) {
+      const ordem = v as number[];
+      empurrar(ordem.length, BITS_CONTAGEM);
+      for (let i = 0; i < p.max!; i++) empurrar(ordem[i] ?? 0, bitsDeIndice(p));
+    } else empurrar((v as number[]).reduce((m, i) => m | (1 << i), 0), p.opcoes.length);
   }
 
   empurrar(nonce & ((1 << BITS_NONCE) - 1), BITS_NONCE);
+
+  if (ESCRITA) {
+    // O texto só vale se a opção que o abre está marcada.
+    const aberto = (respostas[ESCRITA.id] as number[]).includes(ESCRITA.escreve!.opcao);
+    const texto = aberto ? normalizarEscrito(escrito, ESCRITA.escreve!.max) : "";
+    empurrar(texto.length, BITS_TAMANHO_TEXTO);
+    for (const c of texto) empurrar(ALFABETO_TEXTO.indexOf(c), 5);
+  }
+
   empurrar(selo(bits), BITS_SELO);
-  while (bits.length < BITS_TOTAL) bits.push(0);
+  while (bits.length % 5) bits.push(0);
 
   let texto = "";
-  for (let i = 0; i < BITS_TOTAL; i += 5) {
+  for (let i = 0; i < bits.length; i += 5) {
     texto += ALFABETO[(bits[i] << 4) | (bits[i + 1] << 3) | (bits[i + 2] << 2) | (bits[i + 3] << 1) | bits[i + 4]];
   }
   return `COOPE${VERSAO}-${texto.match(/.{1,6}/g)!.join("-")}`;
 }
 
+/** Confusões clássicas de quem copia à mão: O vira 0; I e L viram 1. */
+const limparDados = (s: string) => s.toUpperCase().replace(/O/g, "0").replace(/[IL]/g, "1");
+
+function paraBits(dados: string): number[] | null {
+  if (/[^0-9A-HJKMNP-TV-Z]/.test(dados)) return null;
+  const bits: number[] = [];
+  for (const c of dados) {
+    const v = ALFABETO.indexOf(c);
+    for (let i = 4; i >= 0; i--) bits.push((v >> i) & 1);
+  }
+  return bits;
+}
+
+const lerBits = (bits: number[], de: number, n: number) => bits.slice(de, de + n).reduce((a, b) => (a << 1) | b, 0);
+
+/**
+ * Quantos símbolos o código inteiro tem, lido só do começo. O tamanho do texto
+ * está dentro do próprio código, e é isso que deixa achar onde ele termina no
+ * meio de uma conversa colada, sem engolir as palavras que vêm depois.
+ */
+export function simbolosEsperados(dados: string): number | null {
+  const limpo = limparDados(dados);
+  if (limpo.length < SIMBOLOS_PREFIXO) return null;
+  const bits = paraBits(limpo.slice(0, SIMBOLOS_PREFIXO));
+  if (!bits) return null;
+
+  let texto = 0;
+  if (ESCRITA) {
+    texto = lerBits(bits, BITS_ANTES_DO_TEXTO, BITS_TAMANHO_TEXTO);
+    if (texto > ESCRITA.escreve!.max) return null;
+  }
+  return Math.ceil((BITS_PREFIXO + texto * 5 + BITS_SELO) / 5);
+}
+
 export type Decodificado =
-  | { ok: true; respostas: Respostas; nonce: number; codigo: string }
+  | { ok: true; respostas: Respostas; escrito: string; nonce: number; codigo: string }
   | { ok: false; motivo: "formato" | "versao" | "selo" | "valor" };
 
 export function decodificar(texto: string): Decodificado {
@@ -363,43 +487,73 @@ export function decodificar(texto: string): Decodificado {
   if (!m) return { ok: false, motivo: "formato" };
   if (Number(m[1]) !== VERSAO) return { ok: false, motivo: "versao" };
 
-  // Confusões clássicas de quem copia à mão: O vira 0; I e L viram 1.
-  const dados = m[2].replace(/O/g, "0").replace(/[IL]/g, "1");
-  if (dados.length !== SIMBOLOS || /[^0-9A-HJKMNP-TV-Z]/.test(dados)) return { ok: false, motivo: "formato" };
+  const dados = limparDados(m[2]);
+  const esperado = simbolosEsperados(dados);
+  if (esperado === null || dados.length !== esperado) return { ok: false, motivo: "formato" };
 
-  const bits: number[] = [];
-  for (const c of dados) {
-    const v = ALFABETO.indexOf(c);
-    for (let i = 4; i >= 0; i--) bits.push((v >> i) & 1);
-  }
-
-  const ler = (de: number, n: number) => bits.slice(de, de + n).reduce((a, b) => (a << 1) | b, 0);
-
-  const fimCorpo = BITS_DADOS + BITS_NONCE;
-  if (ler(fimCorpo, BITS_SELO) !== selo(bits.slice(0, fimCorpo))) return { ok: false, motivo: "selo" };
-  if (bits.slice(fimCorpo + BITS_SELO).some((b) => b !== 0)) return { ok: false, motivo: "formato" };
+  const bits = paraBits(dados);
+  if (!bits) return { ok: false, motivo: "formato" };
 
   const respostas: Respostas = {};
   let pos = 0;
   for (const p of PERGUNTAS) {
-    const n = largura(p);
-    const bruto = ler(pos, n);
-    pos += n;
+    let v: Valor;
 
-    const v: Valor =
-      p.tipo === "unica" ? bruto : p.opcoes.map((_, i) => i).filter((i) => (bruto >> i) & 1);
+    if (p.tipo === "unica") {
+      v = lerBits(bits, pos, bitsDeIndice(p));
+      pos += bitsDeIndice(p);
+    } else if (p.ordenada) {
+      const n = lerBits(bits, pos, BITS_CONTAGEM);
+      pos += BITS_CONTAGEM;
+      const slots: number[] = [];
+      for (let i = 0; i < p.max!; i++) {
+        slots.push(lerBits(bits, pos, bitsDeIndice(p)));
+        pos += bitsDeIndice(p);
+      }
+      if (n < 1 || n > p.max! || slots.slice(n).some((s) => s !== 0)) return { ok: false, motivo: "valor" };
+      v = slots.slice(0, n);
+    } else {
+      const mascara = lerBits(bits, pos, p.opcoes.length);
+      pos += p.opcoes.length;
+      v = p.opcoes.map((_, i) => i).filter((i) => (mascara >> i) & 1);
+    }
+
     if (!respostaValida(p, v)) return { ok: false, motivo: "valor" };
     respostas[p.id] = v;
   }
 
-  const nonce = ler(BITS_DADOS, BITS_NONCE);
-  return { ok: true, respostas, nonce, codigo: codificar(respostas, nonce) };
+  const nonce = lerBits(bits, pos, BITS_NONCE);
+  pos += BITS_NONCE;
+
+  let escrito = "";
+  if (ESCRITA) {
+    const n = lerBits(bits, pos, BITS_TAMANHO_TEXTO);
+    pos += BITS_TAMANHO_TEXTO;
+    for (let i = 0; i < n; i++) {
+      const c = lerBits(bits, pos, 5);
+      pos += 5;
+      if (c >= ALFABETO_TEXTO.length) return { ok: false, motivo: "valor" };
+      escrito += ALFABETO_TEXTO[c];
+    }
+    // texto sem a opção que o abre marcada não existe
+    if (n > 0 && !(respostas[ESCRITA.id] as number[]).includes(ESCRITA.escreve!.opcao)) {
+      return { ok: false, motivo: "valor" };
+    }
+    if (escrito !== normalizarEscrito(escrito, ESCRITA.escreve!.max)) return { ok: false, motivo: "valor" };
+  }
+
+  if (lerBits(bits, pos, BITS_SELO) !== selo(bits.slice(0, pos))) return { ok: false, motivo: "selo" };
+  pos += BITS_SELO;
+  if (bits.slice(pos).some((b) => b !== 0)) return { ok: false, motivo: "formato" };
+
+  return { ok: true, respostas, escrito, nonce, codigo: codificar(respostas, nonce, escrito) };
 }
 
 /* ---------------- mensagem ---------------- */
 
 const curtoDe = (p: Pergunta, i: number) => p.opcoes[i].curto ?? p.opcoes[i].rotulo;
 
+/** Rótulos curtos na ordem em que a pessoa escolheu (nas ordenadas, do maior para o menor). */
 export function rotulos(id: string, r: Respostas): string[] {
   const p = porId(id);
   const v = r[id];
@@ -407,23 +561,22 @@ export function rotulos(id: string, r: Respostas): string[] {
 }
 
 /** Resumo em linguagem de gente: é o que quem recebe lê no WhatsApp. */
-export function resumir(r: Respostas): string[] {
-  const perfil = [
-    rotulos("uf", r)[0],
-    rotulos("culturas", r).join(", "),
-    rotulos("area", r)[0],
-    rotulos("faturamento", r)[0],
-  ].filter(Boolean);
+export function resumir(r: Respostas, escrito = ""): string[] {
+  // O mesmo texto que vai para o código: sem isso a mensagem mostraria "Açaí " e a
+  // soma dos códigos contaria "acai", e quem lê e quem calcula veriam coisas diferentes.
+  const limpo = ESCRITA ? normalizarEscrito(escrito, ESCRITA.escreve!.max) : "";
+  const culturas = rotulos("culturas", r).map((c) => (c === "Outras" && limpo ? `outras (${limpo})` : c));
+  const perfil = [rotulos("uf", r).join(", "), culturas.join(", "), rotulos("area", r)[0], rotulos("faturamento", r)[0]];
 
   return [
-    perfil.join(" · "),
-    `Imposto: ${rotulos("imposto", r)[0]}`,
-    `Crédito: ${rotulos("prazo", r)[0]}; atrapalha: ${rotulos("obstaculos", r).join(", ")}`,
-    `Quer resolver primeiro: ${rotulos("prioridade", r).join(", ")}`,
-    `Testaria de graça: ${rotulos("teste", r)[0].toLowerCase()}`,
+    perfil.filter(Boolean).join(" · "),
+    `Imposto: ${rotulos("imposto", r)[0]}; multas por atraso: ${rotulos("multas", r)[0]}`,
+    `Crédito: ${rotulos("prazo", r)[0]}; juros: ${rotulos("taxa", r)[0]}; negado: ${rotulos("negado", r)[0]}`,
+    `Contabilidade: ${rotulos("contador", r)[0]}; controle: ${rotulos("controle", r)[0]}`,
+    `Aumentar a produção: ${rotulos("expansao", r)[0]}`,
   ];
 }
 
-export function montarMensagem(r: Respostas, codigo: string): string {
-  return ["Pesquisa Coope (resposta sem nome)", "", ...resumir(r), "", `Código: ${codigo}`].join("\n");
+export function montarMensagem(r: Respostas, codigo: string, escrito = ""): string {
+  return ["Pesquisa Coope (resposta sem nome)", "", ...resumir(r, escrito), "", `Código: ${codigo}`].join("\n");
 }

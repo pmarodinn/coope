@@ -7,6 +7,8 @@ import {
   PERGUNTAS,
   VERSAO,
   codificar,
+  dicaDe,
+  filtrarEscrito,
   montarMensagem,
   novoNonce,
   respostaValida,
@@ -19,14 +21,16 @@ import {
  *
  * Uma pergunta por tela, só escolhas fechadas, e toque único avança. O que pede
  * mais de um toque (múltipla escolha) ganha um botão fixo embaixo, onde o
- * polegar já está. Nenhum campo de texto: não há como digitar dado pessoal por
- * engano nem como entrar lixo.
+ * polegar já está. Onde a ordem importa (estados, culturas), o número do toque
+ * aparece dentro da opção. O único campo de texto é o de "Outras" culturas, e só
+ * aceita letras, até 24 caracteres: sem dígitos não há como digitar telefone ou CPF.
  */
 
 const VERDE = "#0b7a4a"; // 5,4:1 sobre branco; o verde da marca (3,8:1) não passa em texto
 const TOTAL = PERGUNTAS.length;
 const K_RASCUNHO = "coope:pesquisa:rascunho";
 const K_ENVIADO = "coope:pesquisa:enviado";
+const ESCRITA = PERGUNTAS.find((p) => p.escreve);
 
 type Envio = "manual" | "enviando" | "ok" | "falhou";
 
@@ -59,6 +63,7 @@ const apagar = (k: string) => {
 interface Rascunho {
   passo: number;
   respostas: Respostas;
+  escrito: string;
   nonce: number;
 }
 
@@ -75,9 +80,11 @@ function lerRascunho(): Rascunho | null {
     if (Object.keys(respostas).length === 0) return null;
 
     const aberta = PERGUNTAS.findIndex((p) => respostas[p.id] === undefined);
+    const escrito = typeof d.escrito === "string" && ESCRITA ? filtrarEscrito(d.escrito, ESCRITA.escreve!.max) : "";
     return {
       passo: aberta === -1 ? TOTAL - 1 : aberta,
       respostas,
+      escrito,
       nonce: Number.isInteger(d.nonce) ? d.nonce : novoNonce(),
     };
   } catch {
@@ -115,12 +122,15 @@ function Opcao({
   p,
   i,
   marcada,
+  posicao,
   bloqueada,
   aoTocar,
 }: {
   p: Pergunta;
   i: number;
   marcada: boolean;
+  /** Nas perguntas ordenadas, o número do toque (1 é o maior). */
+  posicao?: number;
   bloqueada: boolean;
   aoTocar: (i: number) => void;
 }) {
@@ -149,20 +159,29 @@ function Opcao({
       role={multipla ? "checkbox" : "radio"}
       aria-checked={marcada}
       aria-disabled={bloqueada || undefined}
+      aria-label={posicao ? `${p.opcoes[i].rotulo}, ${posicao}º escolhido` : undefined}
       onClick={() => !bloqueada && aoTocar(i)}
-      className={base + formato + cor + (bloqueada ? "opacity-45" : "")}
+      className={base + formato + cor + "relative " + (bloqueada ? "opacity-45" : "")}
     >
       {!grade && (
         <span
           aria-hidden
-          className={`grid h-[22px] w-[22px] shrink-0 place-items-center border-2 text-white ${
+          className={`grid h-[22px] w-[22px] shrink-0 place-items-center border-2 text-[13px] font-bold leading-none text-white ${
             multipla ? "rounded-md" : "rounded-full"
           } ${marcada ? "border-[#0b7a4a] bg-[#0b7a4a]" : "border-[#b9c2b8] bg-white"}`}
         >
-          {marcada && <Icone nome="check" tamanho={13} />}
+          {marcada && (posicao ? posicao : <Icone nome="check" tamanho={13} />)}
         </span>
       )}
       <span>{p.opcoes[i].rotulo}</span>
+      {grade && posicao && (
+        <span
+          aria-hidden
+          className="absolute right-1.5 top-1.5 grid h-5 w-5 place-items-center rounded-full bg-white text-[12px] font-bold leading-none text-[#0b7a4a]"
+        >
+          {posicao}
+        </span>
+      )}
     </button>
   );
 }
@@ -183,6 +202,7 @@ function Moldura({ children }: { children: React.ReactNode }) {
 export default function Pesquisa() {
   const [passo, setPasso] = useState(-1); // -1 abertura · 0..TOTAL-1 perguntas · TOTAL fim
   const [respostas, setRespostas] = useState<Respostas>({});
+  const [escrito, setEscrito] = useState("");
   const [nonce, setNonce] = useState<number | null>(null);
   const [rascunho, setRascunho] = useState<Rascunho | null>(null);
   const [jaRespondeu, setJaRespondeu] = useState(false);
@@ -195,6 +215,7 @@ export default function Pesquisa() {
   const [urlPesquisa, setUrlPesquisa] = useState("");
 
   const titulo = useRef<HTMLHeadingElement>(null);
+  const blocoEscrito = useRef<HTMLDivElement>(null);
   const timer = useRef<number | null>(null);
   const primeiraVez = useRef(true);
 
@@ -211,8 +232,16 @@ export default function Pesquisa() {
 
   useEffect(() => {
     if (!pronto || passo < 0 || passo >= TOTAL || Object.keys(respostas).length === 0) return;
-    gravar(K_RASCUNHO, JSON.stringify({ versao: VERSAO, passo, respostas, nonce }));
-  }, [pronto, passo, respostas, nonce]);
+    gravar(K_RASCUNHO, JSON.stringify({ versao: VERSAO, passo, respostas, escrito, nonce }));
+  }, [pronto, passo, respostas, escrito, nonce]);
+
+  // Quando "Outras" é marcada o campo de texto aparece logo abaixo; garante que ele apareça na tela.
+  const atual = passo >= 0 && passo < TOTAL ? PERGUNTAS[passo] : null;
+  const escritaAberta =
+    !!atual?.escreve && Array.isArray(respostas[atual.id]) && (respostas[atual.id] as number[]).includes(atual.escreve.opcao);
+  useEffect(() => {
+    if (escritaAberta) blocoEscrito.current?.scrollIntoView({ block: "nearest", behavior: reduzMovimento() ? "auto" : "smooth" });
+  }, [escritaAberta]);
 
   // A cada tela nova: volta ao topo e leva o foco ao título, para leitor de tela e teclado.
   useEffect(() => {
@@ -232,6 +261,7 @@ export default function Pesquisa() {
   function comecar() {
     limparTimer();
     setRespostas({});
+    setEscrito("");
     setNonce(novoNonce());
     setPasso(0);
   }
@@ -239,6 +269,7 @@ export default function Pesquisa() {
   function retomar() {
     if (!rascunho) return;
     setRespostas(rascunho.respostas);
+    setEscrito(rascunho.escrito);
     setNonce(rascunho.nonce);
     setPasso(rascunho.passo);
   }
@@ -250,8 +281,8 @@ export default function Pesquisa() {
 
   async function finalizar() {
     const n = nonce ?? novoNonce();
-    const cod = codificar(respostas, n);
-    const msg = montarMensagem(respostas, cod);
+    const cod = codificar(respostas, n, escrito);
+    const msg = montarMensagem(respostas, cod, escrito);
     const hoje = new Date().toISOString().slice(0, 10);
 
     setCodigo(cod);
@@ -302,10 +333,22 @@ export default function Pesquisa() {
 
     const marcadas = Array.isArray(atual) ? atual : [];
     let novas: number[];
-    if (marcadas.includes(indice)) novas = marcadas.filter((x) => x !== indice);
-    else if (p.opcoes[indice].exclusiva) novas = [indice];
-    else novas = [...marcadas.filter((x) => !p.opcoes[x].exclusiva), indice];
-    setRespostas((r) => ({ ...r, [p.id]: novas.sort((a, b) => a - b) }));
+
+    if (p.ordenada) {
+      // A ordem dos toques é a resposta: desmarcar tira da fila e os de trás sobem.
+      if (marcadas.includes(indice)) novas = marcadas.filter((x) => x !== indice);
+      else if (p.max !== undefined && marcadas.length >= p.max) return;
+      else novas = [...marcadas, indice];
+    } else {
+      if (marcadas.includes(indice)) novas = marcadas.filter((x) => x !== indice);
+      else if (p.opcoes[indice].exclusiva) novas = [indice];
+      else novas = [...marcadas.filter((x) => !p.opcoes[x].exclusiva), indice];
+      novas.sort((a, b) => a - b);
+    }
+
+    setRespostas((r) => ({ ...r, [p.id]: novas }));
+    // Desmarcou "Outras": o que tinha escrito deixa de valer.
+    if (p.escreve && indice === p.escreve.opcao && !novas.includes(indice)) setEscrito("");
   }
 
   async function aoCopiar() {
@@ -322,11 +365,11 @@ export default function Pesquisa() {
 
           <h1 className="mt-10 text-[34px] font-bold leading-[1.08] tracking-tight">Pesquisa rápida para quem produz</h1>
           <p className="mt-4 text-[18px] leading-snug text-[#4d5b53]">
-            {TOTAL} perguntas de toque, cerca de 2 minutos.
+            {TOTAL} perguntas sobre como você toca a fazenda hoje. Cerca de 3 minutos.
           </p>
 
           <ul className="mt-9 space-y-4">
-            {["Sem nome, CPF ou telefone.", "É só escolher, sem digitar nada.", "Dá para parar e continuar depois."].map(
+            {["Sem nome, CPF ou telefone.", "É só escolher, quase sem digitar.", "Dá para parar e continuar depois."].map(
               (t) => (
                 <li key={t} className="flex items-center gap-3.5 text-[17px]">
                   <span
@@ -472,6 +515,7 @@ export default function Pesquisa() {
 
   /* ---------- pergunta ---------- */
   const p = PERGUNTAS[passo];
+  const dica = dicaDe(p, respostas);
   const valor = respostas[p.id];
   const marcadas = Array.isArray(valor) ? valor : typeof valor === "number" ? [valor] : [];
   const multipla = p.tipo === "multipla";
@@ -505,7 +549,7 @@ export default function Pesquisa() {
         <h1 ref={titulo} tabIndex={-1} className="text-[26px] font-bold leading-[1.15] tracking-tight outline-none">
           {p.titulo}
         </h1>
-        {p.dica && <p className="mt-2.5 text-[16px] leading-snug text-[#4d5b53]">{p.dica}</p>}
+        {dica && <p className="mt-2.5 text-[16px] leading-snug text-[#4d5b53]">{dica}</p>}
 
         <div
           role={multipla ? "group" : "radiogroup"}
@@ -520,12 +564,41 @@ export default function Pesquisa() {
                 p={p}
                 i={i}
                 marcada={marcada}
+                posicao={p.ordenada && marcada ? marcadas.indexOf(i) + 1 : undefined}
                 bloqueada={cheio && !marcada && !p.opcoes[i].exclusiva}
                 aoTocar={(x) => tocar(p, x)}
               />
             );
           })}
         </div>
+
+        {p.escreve && escritaAberta && (
+          // scroll-mb: o botão fixo de baixo cobre ~180px; sem a margem, o rolar
+          // automático deixava o campo escondido atrás dele.
+          <div ref={blocoEscrito} className="mt-6 scroll-mb-48 [animation:rise_.25s_ease-out_both]">
+            <label htmlFor="escrito" className="text-[17px] font-semibold">
+              {p.escreve.rotulo}
+            </label>
+            <input
+              id="escrito"
+              type="text"
+              value={escrito}
+              maxLength={p.escreve.max}
+              onChange={(e) => setEscrito(filtrarEscrito(e.target.value, p.escreve!.max))}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") e.currentTarget.blur();
+              }}
+              placeholder={p.escreve.exemplo}
+              autoComplete="off"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              enterKeyHint="done"
+              className="mt-2 h-14 w-full rounded-2xl border border-[#dde2db] bg-white px-4 text-[17px] outline-none focus:border-[#0b7a4a] focus:ring-1 focus:ring-[#0b7a4a]"
+            />
+            <p className="mt-1.5 text-[14px] text-[#4d5b53]">Só letras, até {p.escreve.max} caracteres. Se preferir, deixe em branco.</p>
+          </div>
+        )}
 
         <p className="sr-only" aria-live="polite">
           Pergunta {passo + 1} de {TOTAL}

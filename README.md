@@ -36,17 +36,29 @@ PAGES=1 BASE_PATH=/coope npm run build
 
 ## Pesquisa com produtores
 
-Formulário de 17 perguntas de toque, anônimo e sem servidor nem banco de dados.
-Cada resposta vira um código curto (`COOPE1-XXXXXX-XXXXXX-XXXXXX`) que carrega
-todas as escolhas; o produtor manda o código dentro de uma mensagem legível, e
-`/pesquisa/resultados` desmonta os códigos colados e faz as contas (indicadores
-com intervalo de confiança, funil de demanda qualificada, CSV).
+Formulário de perguntas de toque, anônimo e sem servidor nem banco de dados. Ele
+mede o que o produtor já vive, paga e sofre hoje (imposto, multas por atraso,
+crédito negado, juros, custo de contabilidade, como controla o dinheiro), e não
+o interesse num serviço que ele ainda não conhece.
 
-- Não existe campo de texto: só escolhas fechadas. Um código só é aceito se cada
-  valor cair dentro das opções e o selo de verificação fechar.
+Cada resposta vira um código (`COOPE2-XXXXXX-XXXXXX-...`) que carrega todas as
+escolhas; o produtor manda o código dentro de uma mensagem legível, e
+`/pesquisa/resultados` desmonta os códigos colados e faz as contas: indicadores
+com intervalo de confiança, funil de demanda qualificada (perfil, dor
+recorrente, abertura a tecnologia, certificado digital) e CSV.
+
+- Estados e culturas aceitam várias marcações, e a ordem dos toques é a ordem de
+  tamanho: o primeiro é o maior. A pergunta de hectares pede a soma quando há mais
+  de um estado.
+- Só escolhas fechadas, com uma exceção: "Outras" culturas abre um campo de até
+  24 caracteres que só aceita letras. Sem dígitos não há como digitar telefone
+  ou CPF. Um código só é aceito se cada valor cair dentro das opções e o selo de
+  verificação fechar.
 - O questionário e o codificador ficam em `src/lib/pesquisa.ts`. Mudou uma
   pergunta ou uma opção? Suba `VERSAO` no mesmo arquivo: códigos antigos passam a
-  ser recusados em vez de lidos errado.
+  ser recusados em vez de lidos errado. As contas de `pesquisa-analise.ts` usam
+  índices de opção (por exemplo, "imposto 0 e 1 = só descobre no fim do ano"):
+  conferir esses índices é parte de mudar uma opção.
 - Para onde vão as respostas: `src/lib/pesquisa-config.ts`. Com `whatsapp`
   preenchido, o botão do fim abre direto a conversa. Com `endpoint` (Formspree,
   Web3Forms, FormSubmit ou um Worker próprio), o envio é automático e o WhatsApp

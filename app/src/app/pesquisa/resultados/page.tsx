@@ -5,6 +5,8 @@ import { PERGUNTAS } from "@/lib/pesquisa";
 import {
   adicionar,
   contar,
+  contarPrimeira,
+  escritos,
   funil,
   indicadores,
   intervalo,
@@ -265,12 +267,18 @@ export default function Resultados() {
             <div className="mt-5 grid gap-x-10 gap-y-9 md:grid-cols-2">
               {PERGUNTAS.map((p) => {
                 const c = contar(visiveis, p.id);
+                const primeira = p.ordenada ? contarPrimeira(visiveis, p.id) : null;
                 const maior = Math.max(...c, 1);
+                const livres = p.escreve ? escritos(visiveis) : [];
                 return (
                   <section key={p.id}>
                     <h3 className="text-[16px] font-semibold leading-snug">{p.titulo}</h3>
                     {p.tipo === "multipla" && (
-                      <p className="mt-0.5 text-[12.5px] text-[#4d5b53]">Cada pessoa podia marcar mais de uma.</p>
+                      <p className="mt-0.5 text-[12.5px] text-[#4d5b53]">
+                        {p.ordenada
+                          ? "Cada pessoa podia marcar vários, do maior para o menor. “Principal” é o primeiro que tocou."
+                          : "Cada pessoa podia marcar mais de uma."}
+                      </p>
                     )}
                     <ul className="mt-3 space-y-2">
                       {p.opcoes.map((o, i) => (
@@ -278,15 +286,32 @@ export default function Resultados() {
                           <div className="flex items-baseline justify-between gap-3 text-[14px]">
                             <span className="leading-snug">{o.rotulo}</span>
                             <span className="shrink-0 tabular-nums text-[#4d5b53]">
-                              {c[i]} · {visiveis.length ? pct(c[i] / visiveis.length) : "—"}
+                              {primeira ? `${primeira[i]} principal · ` : ""}
+                              {c[i]}
+                              {primeira ? " citados" : ""} · {visiveis.length ? pct(c[i] / visiveis.length) : "—"}
                             </span>
                           </div>
-                          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[#eceeea]">
-                            <div className="h-full rounded-full" style={{ width: `${(c[i] / maior) * 100}%`, background: VERDE }} />
+                          <div className="relative mt-1 h-1.5 overflow-hidden rounded-full bg-[#eceeea]">
+                            <div
+                              className="absolute inset-y-0 left-0 rounded-full"
+                              style={{ width: `${(c[i] / maior) * 100}%`, background: primeira ? "#9fd3b6" : VERDE }}
+                            />
+                            {primeira && (
+                              <div
+                                className="absolute inset-y-0 left-0 rounded-full"
+                                style={{ width: `${(primeira[i] / maior) * 100}%`, background: VERDE }}
+                              />
+                            )}
                           </div>
                         </li>
                       ))}
                     </ul>
+                    {livres.length > 0 && (
+                      <p className="mt-3 text-[13.5px] leading-relaxed text-[#4d5b53]">
+                        <strong className="font-semibold text-[#111814]">Escreveram em “Outras”:</strong>{" "}
+                        {livres.map((l) => `${l.texto}${l.n > 1 ? ` (${l.n})` : ""}`).join(", ")}
+                      </p>
+                    )}
                   </section>
                 );
               })}
@@ -296,8 +321,9 @@ export default function Resultados() {
 
         <p className="mt-16 max-w-[66ch] text-[13px] leading-relaxed text-[#4d5b53]">
           Como ler: a pesquisa circula por indicação no WhatsApp, então quem responde tende a ser mais digital e mais
-          próximo de vocês do que o produtor médio. Serve para validar hipótese e achar o que perguntar a seguir, não
-          para dizer o tamanho do mercado. Os intervalos são de confiança de 95% (método de Wilson).
+          próximo de vocês do que o produtor médio. Ela mede o que o produtor já vive, paga e sofre, e não o que diria
+          de um serviço que ainda não conhece. Serve para validar hipótese e achar o que perguntar a seguir, não para
+          dizer o tamanho do mercado. Os intervalos são de confiança de 95% (método de Wilson).
         </p>
       </main>
     </div>
