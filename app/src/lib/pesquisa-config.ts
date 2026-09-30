@@ -1,36 +1,34 @@
 /**
- * Para onde vão as respostas da pesquisa. Edite aqui e publique.
+ * Para onde vão as respostas da pesquisa.
  *
- * Sem nada configurado a pesquisa já funciona: no fim o produtor toca em
- * "Enviar pelo WhatsApp" e escolhe a conversa. Configurar qualquer um dos dois
- * abaixo só deixa o caminho mais curto.
+ * Ao terminar, o formulário grava sozinho um documento no Firestore do projeto
+ * "Pesquisa Dores - Coope", na coleção `respostas`. A chave abaixo é a chave
+ * *web* do Firebase: ela só identifica o projeto e é pública por desenho (está
+ * em todo site que usa Firebase). Quem protege os dados são as regras de
+ * segurança em `firebase/firestore.rules`, que deixam o site apenas criar
+ * registros no formato certo, sem ler, alterar nem apagar.
+ *
+ * NEXT_PUBLIC_FIRESTORE_HOST troca o servidor (usado nos testes, apontando para
+ * um servidor local que imita o Firestore).
  */
 export const PESQUISA = {
-  /**
-   * WhatsApp que recebe as respostas, só dígitos, com país e DDD.
-   * Exemplo: "5565999998888". Vazio: o produtor escolhe a conversa.
-   */
-  whatsapp: "",
+  firebase: {
+    projectId: "pesquisa-dores---coope",
+    apiKey: "AIzaSyAiEVgfCJ4hTUoU9RLnGPPALU1CTmQ-c8s",
+    colecao: "respostas",
+    host: process.env.NEXT_PUBLIC_FIRESTORE_HOST ?? "https://firestore.googleapis.com",
+  },
 
   /**
-   * Endereço que recebe as respostas por POST em JSON, sem ninguém precisar
-   * tocar em nada (Formspree, Web3Forms, FormSubmit, um Worker próprio).
-   * Vazio: só o caminho do WhatsApp.
+   * Quem o titular procura para pedir que seus dados sejam apagados (e-mail ou
+   * telefone). Vazio: a tela manda falar com a equipe que enviou o link.
+   * Preencha antes de distribuir: a LGPD pede um canal para isso.
    */
-  endpoint: process.env.NEXT_PUBLIC_PESQUISA_ENDPOINT ?? "",
-
-  /** Campos fixos enviados junto, como a chave pública do Web3Forms. */
-  camposExtras: {} as Record<string, string>,
+  contatoPrivacidade: "",
 };
-
-export function linkWhatsapp(texto: string) {
-  const numero = PESQUISA.whatsapp.replace(/\D/g, "");
-  const base = numero ? `https://wa.me/${numero}` : "https://wa.me/";
-  return `${base}?text=${encodeURIComponent(texto)}`;
-}
 
 /** Indicar a pesquisa a outro produtor: sempre escolhe a conversa. */
 export function linkIndicar(url: string) {
-  const texto = `Pesquisa rápida para quem produz, leva uns 2 minutos e não pede nome nem CPF: ${url}`;
+  const texto = `Pesquisa rápida para quem produz, leva uns 3 minutos: ${url}`;
   return `https://wa.me/?text=${encodeURIComponent(texto)}`;
 }

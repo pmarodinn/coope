@@ -1,0 +1,132 @@
+rules_version = '2';
+
+// Gerado por `npm run regras` a partir de src/lib/pesquisa-registro.ts. Não edite à mão.
+//
+// Quem abre a pesquisa só consegue CRIAR um registro com exatamente os 75 campos
+// abaixo, cada um do tipo certo (texto ou decimal). Não consegue ler, alterar nem
+// apagar: nome e celular só saem pelo console do Firebase ou pela exportação.
+//
+// O Firestore recusa regra que gaste mais de 1.000 expressões por pedido, então
+// aqui só o contato e os dados do envio têm formato conferido. Os valores das
+// respostas são conferidos na exportação, pelo selo do código.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /respostas/{id} {
+      allow create: if id.matches('^[0-9]{8}T[0-9]{4}-[0-9a-z]{6}$') && registroValido(request.resource.data);
+      allow read, update, delete: if false;
+    }
+
+    // Tamanho exato e nomes só desta lista: nenhum campo a mais, nenhum a menos.
+    function registroValido(d) {
+      return d.size() == 75
+        && d.keys().hasOnly(['contato_nome', 'contato_celular', 'contato_aceite', 'envio_em', 'envio_versao', 'envio_codigo', 'p01_uf_mt', 'p01_uf_ms', 'p01_uf_go', 'p01_uf_pr', 'p01_uf_rs', 'p01_uf_sp', 'p01_uf_mg', 'p01_uf_ba', 'p01_uf_sc', 'p01_uf_to', 'p01_uf_ma', 'p01_uf_pi', 'p01_uf_pa', 'p01_uf_ro', 'p01_uf_outro', 'p01_uf_txt', 'p02_culturas_soja', 'p02_culturas_milho', 'p02_culturas_algodao', 'p02_culturas_cafe', 'p02_culturas_cana', 'p02_culturas_trigo_arroz_feijao', 'p02_culturas_pecuaria', 'p02_culturas_leite', 'p02_culturas_outras', 'p02_culturas_outras_txt', 'p02_culturas_txt', 'p03_area', 'p03_area_txt', 'p04_faturamento', 'p04_faturamento_txt', 'p05_formato', 'p05_formato_txt', 'p06_controle', 'p06_controle_txt', 'p07_contador', 'p07_contador_txt', 'p08_imposto', 'p08_imposto_txt', 'p09_multas', 'p09_multas_txt', 'p10_custeio_proprio', 'p10_custeio_banco', 'p10_custeio_cooperativa', 'p10_custeio_revenda', 'p10_custeio_fundo_cpr', 'p10_custeio_outro', 'p10_custeio_txt', 'p11_prazo', 'p11_prazo_txt', 'p12_taxa', 'p12_taxa_txt', 'p13_negado', 'p13_negado_txt', 'p14_obstaculos_juros', 'p14_obstaculos_demora', 'p14_obstaculos_garantia', 'p14_obstaculos_documentacao', 'p14_obstaculos_limite', 'p14_obstaculos_nada', 'p14_obstaculos_txt', 'p15_seguro', 'p15_seguro_txt', 'p16_expansao', 'p16_expansao_txt', 'p17_tecnologia', 'p17_tecnologia_txt', 'p18_certificado', 'p18_certificado_txt'])
+        && grupo1(d)
+        && grupo2(d)
+        && grupo3(d)
+        && grupo4(d)
+        && grupo5(d)
+        && grupo6(d)
+        && grupo7(d)
+        && grupo8(d);
+    }
+
+    function grupo1(d) {
+      return d.contato_nome is string && d.contato_nome.size() >= 2 && d.contato_nome.size() <= 60
+        && d.contato_celular is string && d.contato_celular.size() == 14 && d.contato_celular.matches('^\\+55[0-9]{11}$')
+        && d.contato_aceite is string && d.contato_aceite.size() == 3 && d.contato_aceite.matches('^sim$')
+        && d.envio_em is string && d.envio_em.size() == 20 && d.envio_em.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$')
+        && d.envio_versao is float && d.envio_versao == 3
+        && d.envio_codigo is string && d.envio_codigo.size() >= 10 && d.envio_codigo.size() <= 200 && d.envio_codigo.matches('^COOPE[0-9]-[0-9A-Z-]+$')
+        && d.p01_uf_mt is float
+        && d.p01_uf_ms is float
+        && d.p01_uf_go is float
+        && d.p01_uf_pr is float;
+    }
+
+    function grupo2(d) {
+      return d.p01_uf_rs is float
+        && d.p01_uf_sp is float
+        && d.p01_uf_mg is float
+        && d.p01_uf_ba is float
+        && d.p01_uf_sc is float
+        && d.p01_uf_to is float
+        && d.p01_uf_ma is float
+        && d.p01_uf_pi is float
+        && d.p01_uf_pa is float
+        && d.p01_uf_ro is float;
+    }
+
+    function grupo3(d) {
+      return d.p01_uf_outro is float
+        && d.p01_uf_txt is string
+        && d.p02_culturas_soja is float
+        && d.p02_culturas_milho is float
+        && d.p02_culturas_algodao is float
+        && d.p02_culturas_cafe is float
+        && d.p02_culturas_cana is float
+        && d.p02_culturas_trigo_arroz_feijao is float
+        && d.p02_culturas_pecuaria is float
+        && d.p02_culturas_leite is float;
+    }
+
+    function grupo4(d) {
+      return d.p02_culturas_outras is float
+        && d.p02_culturas_outras_txt is string && d.p02_culturas_outras_txt.size() >= 0 && d.p02_culturas_outras_txt.size() <= 24
+        && d.p02_culturas_txt is string
+        && d.p03_area is float
+        && d.p03_area_txt is string
+        && d.p04_faturamento is float
+        && d.p04_faturamento_txt is string
+        && d.p05_formato is float
+        && d.p05_formato_txt is string
+        && d.p06_controle is float;
+    }
+
+    function grupo5(d) {
+      return d.p06_controle_txt is string
+        && d.p07_contador is float
+        && d.p07_contador_txt is string
+        && d.p08_imposto is float
+        && d.p08_imposto_txt is string
+        && d.p09_multas is float
+        && d.p09_multas_txt is string
+        && d.p10_custeio_proprio is float
+        && d.p10_custeio_banco is float
+        && d.p10_custeio_cooperativa is float;
+    }
+
+    function grupo6(d) {
+      return d.p10_custeio_revenda is float
+        && d.p10_custeio_fundo_cpr is float
+        && d.p10_custeio_outro is float
+        && d.p10_custeio_txt is string
+        && d.p11_prazo is float
+        && d.p11_prazo_txt is string
+        && d.p12_taxa is float
+        && d.p12_taxa_txt is string
+        && d.p13_negado is float
+        && d.p13_negado_txt is string;
+    }
+
+    function grupo7(d) {
+      return d.p14_obstaculos_juros is float
+        && d.p14_obstaculos_demora is float
+        && d.p14_obstaculos_garantia is float
+        && d.p14_obstaculos_documentacao is float
+        && d.p14_obstaculos_limite is float
+        && d.p14_obstaculos_nada is float
+        && d.p14_obstaculos_txt is string
+        && d.p15_seguro is float
+        && d.p15_seguro_txt is string
+        && d.p16_expansao is float;
+    }
+
+    function grupo8(d) {
+      return d.p16_expansao_txt is string
+        && d.p17_tecnologia is float
+        && d.p17_tecnologia_txt is string
+        && d.p18_certificado is float
+        && d.p18_certificado_txt is string;
+    }
+  }
+}

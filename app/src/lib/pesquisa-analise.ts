@@ -23,7 +23,7 @@ export interface Entrada {
 /* ---------------- entrada de dados ---------------- */
 
 /**
- * Acha códigos dentro de texto solto: mensagens coladas do WhatsApp, várias de
+ * Acha códigos dentro de texto solto: texto colado ou arquivo exportado, várias de
  * uma vez, com linhas de resumo no meio. Tolera minúsculas, espaço ou traço a
  * mais e quebra de linha no meio do código.
  *

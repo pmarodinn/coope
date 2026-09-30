@@ -5,10 +5,11 @@
  * sondar interesse num serviço que ele ainda não conhece. Por isso as perguntas
  * falam do que ele já faz, já paga e já sofre.
  *
- * Não há servidor nem banco. Cada resposta vira um código curto e legível,
- * como COOPE2-K3M9P2-7QXH4T-..., que carrega todas as escolhas. O produtor manda
- * o código (dentro de uma mensagem legível) por WhatsApp, e a página de
- * resultados desmonta os códigos e faz as contas.
+ * Cada resposta vira um código curto e legível, como COOPE3-K3M9P2-7QXH4T-...,
+ * que carrega todas as escolhas. O código é guardado junto com as respostas em
+ * colunas (ver pesquisa-registro.ts), e a página de resultados desmonta os
+ * códigos e faz as contas. Nome e celular do produtor ficam em campos próprios
+ * do registro e nunca entram no código.
  *
  * Três escolhas de desenho:
  *
@@ -29,10 +30,15 @@
  * a ser recusados em vez de serem lidos errado.
  */
 
-export const VERSAO = 2;
+export const VERSAO = 3;
 
 export interface Opcao {
   rotulo: string;
+  /**
+   * Nome estável da coluna no banco (só perguntas de múltipla escolha). É o que
+   * mantém `p01_uf_mt` sendo "MT" mesmo que o texto da opção mude.
+   */
+  chave?: string;
   /** Forma curta, usada na mensagem e no CSV. */
   curto?: string;
   /** Vale sozinha: marcá-la desmarca as outras ("Nada atrapalha"). */
@@ -58,34 +64,34 @@ export const PERGUNTAS: Pergunta[] = [
   {
     id: "uf",
     titulo: "Em quais estados fica a sua produção?",
-    dica: "Toque primeiro no estado onde você mais produz. A ordem dos toques vira a ordem.",
+    dica: "Se for mais de um, toque em ordem de tamanho: primeiro onde você mais produz.",
     tipo: "multipla",
     ordenada: true,
     max: 5,
     colunas: 3,
     opcoes: ["MT", "MS", "GO", "PR", "RS", "SP", "MG", "BA", "SC", "TO", "MA", "PI", "PA", "RO", "Outro"].map(
-      (rotulo) => ({ rotulo }),
+      (rotulo) => ({ rotulo, chave: rotulo.toLowerCase() }),
     ),
   },
   {
     id: "culturas",
     titulo: "O que você produz?",
-    dica: "Toque primeiro no que mais pesa na sua renda. A ordem dos toques vira a ordem.",
+    dica: "Se for mais de uma, toque em ordem de quantidade: primeiro a que você mais produz.",
     tipo: "multipla",
     ordenada: true,
     max: 6,
     colunas: 2,
     escreve: { opcao: 8, max: 24, rotulo: "Qual outra cultura?", exemplo: "sorgo, eucalipto…" },
     opcoes: [
-      { rotulo: "Soja" },
-      { rotulo: "Milho" },
-      { rotulo: "Algodão" },
-      { rotulo: "Café" },
-      { rotulo: "Cana" },
-      { rotulo: "Trigo, arroz ou feijão", curto: "Trigo/arroz/feijão" },
-      { rotulo: "Pecuária de corte", curto: "Pecuária" },
-      { rotulo: "Leite" },
-      { rotulo: "Outras" },
+      { rotulo: "Soja", chave: "soja" },
+      { rotulo: "Milho", chave: "milho" },
+      { rotulo: "Algodão", chave: "algodao" },
+      { rotulo: "Café", chave: "cafe" },
+      { rotulo: "Cana", chave: "cana" },
+      { rotulo: "Trigo, arroz ou feijão", curto: "Trigo/arroz/feijão", chave: "trigo_arroz_feijao" },
+      { rotulo: "Pecuária de corte", curto: "Pecuária", chave: "pecuaria" },
+      { rotulo: "Leite", chave: "leite" },
+      { rotulo: "Outras", chave: "outras" },
     ],
   },
   {
@@ -115,7 +121,6 @@ export const PERGUNTAS: Pergunta[] = [
       { rotulo: "De R$ 4,8 a 15 milhões", curto: "R$ 4,8 a 15 mi" },
       { rotulo: "De R$ 15 a 50 milhões", curto: "R$ 15 a 50 mi" },
       { rotulo: "Mais de R$ 50 milhões", curto: "mais de R$ 50 mi" },
-      { rotulo: "Prefiro não dizer", curto: "" },
     ],
   },
   {
@@ -177,7 +182,7 @@ export const PERGUNTAS: Pergunta[] = [
       { rotulo: "1 ou 2 vezes", curto: "1 ou 2 vezes" },
       { rotulo: "3 a 5 vezes", curto: "3 a 5 vezes" },
       { rotulo: "Mais de 5 vezes", curto: "mais de 5 vezes" },
-      { rotulo: "Não sei dizer", curto: "não sabe" },
+      { rotulo: "Não lembro", curto: "não lembra" },
     ],
   },
   {
@@ -186,12 +191,12 @@ export const PERGUNTAS: Pergunta[] = [
     dica: "Adubo, semente e defensivo. Marque todas que usa.",
     tipo: "multipla",
     opcoes: [
-      { rotulo: "Dinheiro da própria fazenda", curto: "capital próprio" },
-      { rotulo: "Banco (custeio, Plano Safra)", curto: "banco" },
-      { rotulo: "Cooperativa" },
-      { rotulo: "Revenda ou fornecedor (barter, prazo)", curto: "revenda/barter" },
-      { rotulo: "Fundo, CPR ou mercado de capitais", curto: "fundo/CPR" },
-      { rotulo: "Outro" },
+      { rotulo: "Dinheiro da própria fazenda", curto: "capital próprio", chave: "proprio" },
+      { rotulo: "Banco (custeio, Plano Safra)", curto: "banco", chave: "banco" },
+      { rotulo: "Cooperativa", chave: "cooperativa" },
+      { rotulo: "Revenda ou fornecedor (barter, prazo)", curto: "revenda/barter", chave: "revenda" },
+      { rotulo: "Fundo, CPR ou mercado de capitais", curto: "fundo/CPR", chave: "fundo_cpr" },
+      { rotulo: "Outro", chave: "outro" },
     ],
   },
   {
@@ -242,12 +247,12 @@ export const PERGUNTAS: Pergunta[] = [
     tipo: "multipla",
     max: 2,
     opcoes: [
-      { rotulo: "Juros altos", curto: "juros altos" },
-      { rotulo: "Demora", curto: "demora" },
-      { rotulo: "Exigência de garantia (hipoteca da terra)", curto: "garantia" },
-      { rotulo: "Muita documentação", curto: "documentação" },
-      { rotulo: "Já estou no limite do banco", curto: "limite do banco" },
-      { rotulo: "Nada atrapalha", curto: "nada", exclusiva: true },
+      { rotulo: "Juros altos", curto: "juros altos", chave: "juros" },
+      { rotulo: "Demora", curto: "demora", chave: "demora" },
+      { rotulo: "Exigência de garantia (hipoteca da terra)", curto: "garantia", chave: "garantia" },
+      { rotulo: "Muita documentação", curto: "documentação", chave: "documentacao" },
+      { rotulo: "Já estou no limite do banco", curto: "limite do banco", chave: "limite" },
+      { rotulo: "Nada atrapalha", curto: "nada", exclusiva: true, chave: "nada" },
     ],
   },
   {
@@ -310,6 +315,14 @@ const BITS_CONTAGEM = 3;
 for (const p of PERGUNTAS) {
   if (p.ordenada && (p.tipo !== "multipla" || !p.max || p.max >= 1 << BITS_CONTAGEM)) {
     throw new Error(`"${p.id}": ordenada exige múltipla com max de 1 a ${(1 << BITS_CONTAGEM) - 1}`);
+  }
+}
+// Cada pergunta de múltipla escolha vira uma coluna por opção no banco: o nome da coluna precisa existir e ser único.
+for (const p of PERGUNTAS) {
+  if (p.tipo !== "multipla") continue;
+  const chaves = p.opcoes.map((o) => o.chave);
+  if (!chaves.every((c) => c && /^[a-z][a-z0-9_]*$/.test(c)) || new Set(chaves).size !== chaves.length) {
+    throw new Error(`"${p.id}": toda opção precisa de uma chave única (a-z, 0-9 e _)`);
   }
 }
 const ESCRITA = PERGUNTAS.find((p) => p.escreve);
@@ -577,6 +590,3 @@ export function resumir(r: Respostas, escrito = ""): string[] {
   ];
 }
 
-export function montarMensagem(r: Respostas, codigo: string, escrito = ""): string {
-  return ["Pesquisa Coope (resposta sem nome)", "", ...resumir(r, escrito), "", `Código: ${codigo}`].join("\n");
-}

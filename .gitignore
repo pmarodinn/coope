@@ -10,3 +10,8 @@ out/
 .DS_Store
 .agents/
 .claude/
+
+# Respostas exportadas da pesquisa: têm nome e celular de produtores.
+exportados/
+# Cache local do Firebase CLI
+.firebase/

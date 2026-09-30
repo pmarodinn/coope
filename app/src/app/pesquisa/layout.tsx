@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { asset } from "@/lib/asset";
 
 const TITULO = "Pesquisa rápida para quem produz";
-const DESCRICAO = "Perguntas sobre como você toca a fazenda hoje, cerca de 3 minutos. Sem nome, CPF ou telefone.";
+const DESCRICAO = "Perguntas sobre como você toca a fazenda hoje, cerca de 3 minutos. É só escolher, quase sem digitar.";
 
 export const metadata: Metadata = {
   title: TITULO,

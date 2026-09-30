@@ -17,8 +17,11 @@ import {
 } from "@/lib/pesquisa-analise";
 
 /**
- * Leitura das respostas. Nada vai para servidor: os códigos colados ficam neste
- * navegador, e o CSV e a cópia dos códigos são o backup.
+ * Leitura das respostas. Esta página não fala com o banco (ele não deixa ninguém
+ * ler pelo site, porque guarda nome e celular). O arquivo `estatisticas.csv`, que
+ * `npm run exportar` gera a partir do banco, é aberto aqui, e as contas ficam
+ * neste navegador. Nome e celular, se vierem no arquivo, não são lidos: a página
+ * só procura os códigos das respostas.
  */
 
 const VERDE = "#0b7a4a";
@@ -52,8 +55,8 @@ export default function Resultados() {
     setPronto(true);
   }, []);
 
-  function incluir() {
-    const r = adicionar(lista, texto);
+  function incluir(conteudo: string = texto, deArquivo = false) {
+    const r = adicionar(lista, conteudo);
     setLista(r.lista);
     guardar(r.lista);
 
@@ -63,7 +66,18 @@ export default function Resultados() {
     if (r.outraVersao) partes.push(`${r.outraVersao} de outra versão da pesquisa`);
     if (!r.novas && !r.repetidas && !r.invalidas && !r.outraVersao) partes.splice(0, 1, "Nenhum código encontrado no texto");
     setAviso(partes.join(" · "));
-    if (r.novas || r.repetidas) setTexto("");
+    if (!deArquivo && (r.novas || r.repetidas)) setTexto("");
+  }
+
+  async function abrirArquivo(e: React.ChangeEvent<HTMLInputElement>) {
+    const arquivo = e.target.files?.[0];
+    e.target.value = ""; // permite abrir o mesmo arquivo de novo depois
+    if (!arquivo) return;
+    try {
+      incluir(await arquivo.text(), true);
+    } catch {
+      setAviso("Não deu para ler esse arquivo.");
+    }
   }
 
   function baixar() {
@@ -116,14 +130,26 @@ export default function Resultados() {
         <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-[#4d5b53]">Coope</p>
         <h1 className="mt-2 text-[32px] font-bold leading-tight tracking-tight md:text-[40px]">Resultados da pesquisa</h1>
         <p className="mt-3 max-w-[60ch] text-[16px] leading-relaxed text-[#4d5b53]">
-          Cole aqui as mensagens que chegaram, todas de uma vez se quiser. A página acha os códigos, ignora o resto e
-          faz as contas. Os dados ficam só neste navegador.
+          Abra o arquivo <span className="font-mono text-[14px]">estatisticas.csv</span>, que o comando{" "}
+          <span className="font-mono text-[14px]">npm run exportar</span> gera a partir do banco, ou cole os códigos. A
+          página acha os códigos, ignora o resto e faz as contas. Nada sai deste navegador, e nome e celular não são lidos.
         </p>
 
         {/* entrada */}
         <section className="mt-8 rounded-2xl border border-[#dde2db] p-4 md:p-5">
-          <label htmlFor="colar" className="text-[15px] font-semibold">
-            Mensagens ou códigos
+          <div className="flex flex-wrap items-center gap-3">
+            <label
+              htmlFor="arquivo"
+              className="inline-flex h-11 cursor-pointer items-center rounded-xl px-5 text-[15px] font-semibold text-white focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[#0b7a4a]"
+              style={{ background: VERDE }}
+            >
+              Abrir arquivo
+              <input id="arquivo" type="file" accept=".csv,.txt,text/csv,text/plain" onChange={abrirArquivo} className="sr-only" />
+            </label>
+            <span className="text-[14px] text-[#4d5b53]">ou cole os códigos abaixo</span>
+          </div>
+          <label htmlFor="colar" className="mt-5 block text-[15px] font-semibold">
+            Códigos
           </label>
           <textarea
             id="colar"
@@ -131,13 +157,13 @@ export default function Resultados() {
             onChange={(e) => setTexto(e.target.value)}
             rows={5}
             spellCheck={false}
-            placeholder="Cole aqui. Pode ser a conversa inteira do WhatsApp."
+            placeholder="Cole aqui os códigos (COOPE3-…), um por linha ou misturados a outro texto."
             className="mt-2 w-full resize-y rounded-xl border border-[#dde2db] bg-[#fafbf9] p-3 font-mono text-[14px] leading-relaxed outline-none focus:border-[#0b7a4a]"
           />
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <button
               type="button"
-              onClick={incluir}
+              onClick={() => incluir()}
               disabled={!texto.trim()}
               className="h-11 rounded-xl px-5 text-[15px] font-semibold text-white disabled:bg-[#cdd5cd]"
               style={texto.trim() ? { background: VERDE } : undefined}
@@ -154,7 +180,7 @@ export default function Resultados() {
 
         {pronto && lista.length === 0 && (
           <p className="mt-12 rounded-2xl bg-[#f3f5f1] px-5 py-8 text-center text-[16px] text-[#4d5b53]">
-            Ainda não há respostas. Cole as primeiras acima.
+            Ainda não há respostas. Abra o arquivo exportado ou cole os primeiros códigos acima.
           </p>
         )}
 
