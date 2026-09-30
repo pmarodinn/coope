@@ -128,9 +128,9 @@ servidor local que imite o Firestore antes de rodar o build.
 
 ### Antes de distribuir
 
-- Preencha `contatoPrivacidade` em `src/lib/pesquisa-config.ts`: a LGPD pede um
-  canal para o produtor pedir que os dados dele sejam apagados. Vazio, a tela diz
-  "fale com quem te enviou o link".
+- A tela diz que a pesquisa é organizada pela Coope e não indica canal para o
+  produtor pedir a exclusão dos dados. A LGPD dá ao titular esse direito; se o
+  jurídico exigir um canal, ele entra no texto do aceite (`page.tsx`).
 - O aceite é único e cobre guardar nome, celular e respostas e o contato
   comercial. Se o comercial for usar os dados para outra finalidade, a base legal
   e o texto do aceite precisam cobrir isso.

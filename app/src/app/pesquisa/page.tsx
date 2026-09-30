@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Icone, Logo } from "@/components/ui";
-import { PESQUISA, linkIndicar } from "@/lib/pesquisa-config";
+import { linkIndicar } from "@/lib/pesquisa-config";
 import {
   PERGUNTAS,
   VERSAO,
@@ -196,9 +196,6 @@ function Moldura({ children, teste }: { children: React.ReactNode; teste?: boole
 
 const CAMPO =
   "mt-2 h-14 w-full rounded-2xl border bg-white px-4 text-[17px] outline-none focus:border-[#0b7a4a] focus:ring-1 focus:ring-[#0b7a4a] ";
-
-/** Quem o produtor procura para apagar os dados dele. */
-const canalPrivacidade = () => PESQUISA.contatoPrivacidade || "fale com quem te enviou o link";
 
 /* ---------------- página ---------------- */
 
@@ -413,6 +410,7 @@ export default function Pesquisa() {
           <p className="mt-4 text-[18px] leading-snug text-[#4d5b53]">
             {TOTAL} perguntas sobre como você toca a fazenda hoje. Cerca de 3 minutos.
           </p>
+          <p className="mt-2 text-[16px] font-medium text-[#33413a]">Pesquisa organizada pela Coope.</p>
 
           <ul className="mt-9 space-y-4">
             {["É só escolher, quase sem digitar.", "Dá para parar e continuar depois.", "Não pedimos CPF nem dados da conta."].map(
@@ -477,9 +475,9 @@ export default function Pesquisa() {
             <details className="mt-6 text-[14px] leading-relaxed text-[#4d5b53]">
               <summary className="cursor-pointer py-1 font-medium">Como usamos as respostas</summary>
               <p className="mt-2">
-                Pedimos seu nome e celular para a equipe da Coope poder falar com você depois. Somamos as respostas de
-                vários produtores para entender o que o campo precisa em imposto, crédito e seguro. Não pedimos CPF nem
-                dados da conta. Para apagar seus dados, {canalPrivacidade()}.
+                Esta pesquisa é organizada pela Coope. Pedimos seu nome e celular para a equipe da Coope poder falar com
+                você depois. Somamos as respostas de vários produtores para entender o que o campo precisa em imposto,
+                crédito e seguro. Não pedimos CPF nem dados da conta.
               </p>
             </details>
           </div>
@@ -608,8 +606,8 @@ export default function Pesquisa() {
                 {aceite && <Icone nome="check" tamanho={13} />}
               </span>
               <span id="aceite-texto" className="text-[15px] leading-snug">
-                Autorizo a Coope a guardar meu nome, celular e respostas para estudar o que quem produz precisa e entrar em
-                contato comigo. Para apagar meus dados, {canalPrivacidade()}.
+                Autorizo a Coope, que organiza esta pesquisa, a guardar meu nome, celular e respostas para estudar o que
+                quem produz precisa e entrar em contato comigo.
               </span>
             </button>
             {erroAceite && (

@@ -18,13 +18,6 @@ export const PESQUISA = {
     colecao: "respostas",
     host: process.env.NEXT_PUBLIC_FIRESTORE_HOST ?? "https://firestore.googleapis.com",
   },
-
-  /**
-   * Quem o titular procura para pedir que seus dados sejam apagados (e-mail ou
-   * telefone). Vazio: a tela manda falar com a equipe que enviou o link.
-   * Preencha antes de distribuir: a LGPD pede um canal para isso.
-   */
-  contatoPrivacidade: "",
 };
 
 /** Indicar a pesquisa a outro produtor: sempre escolhe a conversa. */
