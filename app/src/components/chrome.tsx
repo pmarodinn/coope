@@ -22,6 +22,10 @@ export function Chrome({ children }: { children: ReactNode }) {
 
   if (path.startsWith("/app")) return <Shell>{children}</Shell>;
 
+  // A pesquisa é para o celular do produtor: nada de tema escuro nem de rolagem
+  // suave, que só pesam e atrapalham num formulário de toques.
+  if (path.startsWith("/pesquisa")) return <>{children}</>;
+
   // O console é leitura de dado denso: rolagem suave atrapalha a varredura.
   const ehConsole = path.startsWith("/motor");
 

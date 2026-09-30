@@ -98,24 +98,21 @@ export function instalarApiLocal() {
   const original = window.fetch.bind(window);
 
   window.fetch = async (entrada: RequestInfo | URL, init?: RequestInit) => {
-    const url =
-      typeof entrada === "string"
-        ? entrada
-        : entrada instanceof URL
-          ? entrada.pathname
-          : entrada.url;
+    const url = typeof entrada === "string" ? entrada : entrada instanceof URL ? entrada.href : entrada.url;
 
-    const caminho = url.startsWith("http") ? new URL(url).pathname : url.split("?")[0];
+    // Só as chamadas para o próprio site. Um serviço externo com "/api/" no
+    // caminho (um Worker de formulário, por exemplo) seguiria para cá e
+    // voltaria 404, e o envio falharia sem ninguém perceber.
+    const alvo = new URL(url, window.location.href);
+    if (alvo.origin !== window.location.origin) return original(entrada, init);
 
+    const caminho = alvo.pathname;
     if (!caminho.includes("/api/")) return original(entrada, init);
 
     // Remove o basePath do Pages para casar com as chaves acima.
     const rota = caminho.slice(caminho.indexOf("/api/"));
 
-    if (rota === "/api/motor") {
-      const q = url.includes("?") ? new URLSearchParams(url.split("?")[1]) : null;
-      casoAtual = q?.get("caso") ?? "menegat";
-    }
+    if (rota === "/api/motor") casoAtual = alvo.searchParams.get("caso") ?? "menegat";
     const metodo = (init?.method ?? "GET").toUpperCase();
     const manipulador = ROTAS[`${metodo} ${rota}`];
 
