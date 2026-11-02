@@ -17,8 +17,16 @@ const GARANTIAS = [
   {
     icone: "olho",
     titulo: "Você decide o que a gente vê",
-    texto: "Só lemos seus extratos com a sua autorização, e você pode cortar o acesso quando quiser.",
-    norma: "LGPD",
+    texto:
+      "Só lemos seus extratos com a sua autorização, dada no app do seu banco e só para a Coope. Você corta o acesso quando quiser, e a gente não repassa seus dados a mais ninguém.",
+    norma: "LGPD · Open Finance, Res. Conjunta nº 21/2026",
+  },
+  {
+    icone: "nota",
+    titulo: "Seu contador continua no comando",
+    texto:
+      "A Coope organiza notas e extratos e aponta o que falta. Quem escritura, apura e assina é o seu contador.",
+    norma: "Res. CFC nº 1.640/2021",
   },
   {
     icone: "check",
@@ -124,8 +132,8 @@ export default function Seguranca() {
               <p className="text-[14.5px] font-semibold">Acesso aos seus bancos</p>
               <p className="mt-1.5 text-[13px] leading-relaxed text-muted">
                 {consentimento
-                  ? "Ativo. Enquanto estiver ligado, lemos seus extratos para conferir com as notas e calcular seu imposto."
-                  : "Desligado. Sem ele, o imposto para de ser calculado sozinho e não dá para abrir conta nova."}
+                  ? "Ativo. Enquanto estiver ligado, lemos seus extratos para conferir com as notas e montar o livro caixa."
+                  : "Desligado. Sem ele, seu contador volta a mandar o arquivo do banco e não dá para abrir conta nova."}
               </p>
             </div>
             <Chip tom={consentimento ? "bom" : "neutro"}>{consentimento ? "Ligado" : "Desligado"}</Chip>

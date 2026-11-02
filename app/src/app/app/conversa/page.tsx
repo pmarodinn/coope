@@ -14,7 +14,7 @@ const ROTEIRO: Bolha[] = [
   {
     tipo: "texto",
     de: "coope",
-    texto: "Bom dia, seu José. Li suas notas e o caixa da safra. Três coisas me chamaram atenção.",
+    texto: "Bom dia, seu José. Li suas notas e o caixa da safra. Quatro coisas me chamaram atenção.",
   },
   { tipo: "analise" },
   {
@@ -43,6 +43,12 @@ function Achados({ perfil }: { perfil: Perfil }) {
     v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
   const itens = [
+    {
+      icone: "calendario",
+      titulo: "Em janeiro começa o IBS e a CBS",
+      texto:
+        "Sua receita passou de R$ 3,6 milhões: em 2027 o imposto da venda é apurado todo mês, e falta o CNPJ. Já avisei seu contador.",
+    },
     {
       icone: "raio",
       titulo: `Falta caixa em ${perfil.valeDeCaixa.mes}`,

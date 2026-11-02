@@ -14,8 +14,13 @@ import { NOTAS, PRODUTOR, TRANSACOES } from "./seed";
 /** Alíquota marginal máxima do IRPF, aplicável ao resultado da atividade rural. */
 export const ALIQUOTA_IRPF = 0.275;
 
-/** Percentual de arbitramento do resultado quando a escrituração é inidônea ou ausente. */
-export const PERCENTUAL_ARBITRAMENTO = 0.2;
+/**
+ * 20% da receita bruta: o resultado presumido que o produtor PF pode escolher
+ * (Lei nº 8.023/1990, art. 5º) e a base do arbitramento quando falta o livro
+ * caixa (Lei nº 9.250/1995, art. 18, § 2º). O mesmo número, duas portas: uma é
+ * escolha dele, a outra é do Fisco.
+ */
+export const PERCENTUAL_PRESUMIDO = 0.2;
 
 /** Limite de receita bruta que torna o LCDPR obrigatório (IN RFB nº 1.903/2019). */
 export const LIMITE_LCDPR = 4_800_000;
@@ -87,10 +92,13 @@ export function apurar(lancamentos: LancamentoLCDPR[] = gerarLCDPR()): ApuracaoF
     .reduce((s, l) => s + l.valorSaida, 0);
 
   const resultadoReal = Math.max(0, receitaBruta - despesasCusteio - investimentos);
-  const baseArbitrada = receitaBruta * PERCENTUAL_ARBITRAMENTO;
+  const basePresumida = receitaBruta * PERCENTUAL_PRESUMIDO;
 
+  // Alíquota marginal aplicada ao resultado inteiro: aproxima a tabela
+  // progressiva, que para esse nível de renda fica muito perto disso.
   const irSobreResultadoReal = resultadoReal * ALIQUOTA_IRPF;
-  const irSobreBaseArbitrada = baseArbitrada * ALIQUOTA_IRPF;
+  const irSobrePresumido = basePresumida * ALIQUOTA_IRPF;
+  const melhorOpcao = irSobreResultadoReal <= irSobrePresumido ? "resultado" : "presumido";
 
   const conciliadas = TRANSACOES.filter((t) => t.conciliadaCom).length;
 
@@ -99,10 +107,11 @@ export function apurar(lancamentos: LancamentoLCDPR[] = gerarLCDPR()): ApuracaoF
     despesasCusteio,
     investimentos,
     resultadoReal,
-    baseArbitrada,
+    basePresumida,
     irSobreResultadoReal,
-    irSobreBaseArbitrada,
-    economiaTributaria: Math.max(0, irSobreBaseArbitrada - irSobreResultadoReal),
+    irSobrePresumido,
+    melhorOpcao,
+    diferencaOpcoes: Math.abs(irSobrePresumido - irSobreResultadoReal),
     margem: receitaBruta > 0 ? resultadoReal / receitaBruta : 0,
     lancamentos: lancamentos.length,
     cobertura: {

@@ -63,10 +63,12 @@ function Menu() {
           <div className="fixed inset-0 z-40" onClick={() => setAberto(false)} aria-hidden />
           <div className="pop absolute right-0 top-11 z-50 w-56 overflow-hidden rounded-card bg-surface shadow-float">
             {[
+              { href: "/contador", icone: "nota", rotulo: "Painel do contador" },
+              { href: "/app/reforma", icone: "calendario", rotulo: "Reforma 2027" },
               { href: "/app/seguranca", icone: "escudo", rotulo: "Segurança" },
-              { href: "/app/cooperativa", icone: "conta", rotulo: "Visão da cooperativa" },
               { href: "/app/negocio", icone: "credito", rotulo: "Números do negócio" },
-              { href: "/motor", icone: "raio", rotulo: "Motor de decisão" },
+              { href: "/app/cooperativa", icone: "conta", rotulo: "Cooperativa (fase 3)" },
+              { href: "/motor", icone: "raio", rotulo: "Motor de crédito (fase 3)" },
             ].map((l) => (
               <div key={l.href}>
                 <Link
@@ -137,7 +139,8 @@ export function Shell({ children }: { children: ReactNode }) {
         <nav className="shrink-0 border-t border-line bg-surface px-1 pb-2 pt-1.5">
           <ul className="flex">
             {ABAS.map((a) => {
-              const ativo = path === a.href;
+              const ativo =
+                path === a.href || (a.href === "/app/imposto" && path.startsWith("/app/reforma"));
               return (
                 <li key={a.href} className="flex-1">
                   <Link

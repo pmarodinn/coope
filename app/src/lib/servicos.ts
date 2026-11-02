@@ -1,5 +1,6 @@
 import { apurar, gerarLCDPR, montarDossie } from "./engine";
-import { cooperativa, fontesReceita, metricas } from "./negocio";
+import { cooperativa, fontesReceita, METAS, metricas, PRECO } from "./negocio";
+import { carteiraDoEscritorio, reformaDoProdutor } from "./reforma";
 import { compromissos, projetar, resumoImposto } from "./projecao";
 import { montarPerfil, recomendar } from "./recomendacao";
 import { CHECKLIST, NOTAS, OFERTAS, PRODUTOR, TRANSACOES } from "./seed";
@@ -478,7 +479,23 @@ export function lerCompliance() {
 }
 
 export function lerNegocio() {
-  return ok({ metricas: metricas(), receita: fontesReceita(), cooperativa: cooperativa() });
+  return ok({
+    metricas: metricas(),
+    receita: fontesReceita(),
+    metas: METAS,
+    preco: PRECO,
+    cooperativa: cooperativa(),
+  });
+}
+
+/** IBS/CBS do produtor da demonstração: situação, prazos e simulação de 2027. */
+export function lerReforma() {
+  return ok(reformaDoProdutor());
+}
+
+/** A carteira rural do escritório, ordenada pelo que vence primeiro. */
+export function lerCarteira() {
+  return ok(carteiraDoEscritorio());
 }
 
 export function zerar() {

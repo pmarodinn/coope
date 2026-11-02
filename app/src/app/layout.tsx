@@ -5,9 +5,9 @@ import { Chrome } from "@/components/chrome";
 import { asset } from "@/lib/asset";
 import "./globals.css";
 
-const TITULO = "Coope — Crédito rural em horas, com a nota fiscal como prova";
+const TITULO = "Coope — A reforma tributária do campo, pronta para o contador";
 const DESCRICAO =
-  "A fazenda já emite as notas que provam o que ela fatura e o que gasta. A Coope organiza esse histórico e leva pronto a quem empresta.";
+  "Em 2027 a CBS começa a ser cobrada e o produtor pessoa física precisa de CNPJ. A Coope lê as notas da SEFAZ e os extratos do Open Finance e entrega ao escritório a carteira rural conferida, mês a mês.";
 
 export const metadata: Metadata = {
   // Sem isto o Next resolve a imagem contra localhost e a prévia do link

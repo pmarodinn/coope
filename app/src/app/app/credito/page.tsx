@@ -22,7 +22,7 @@ export default function Credito() {
   const [buscando, setBuscando] = useState(false);
   const [escolhida, setEscolhida] = useState<string | null>(null);
   const [escolhendo, setEscolhendo] = useState<string | null>(null);
-  const [pediuPortabilidade, setPediuPortabilidade] = useState(false);
+  const [pediuProposta, setPediuProposta] = useState(false);
 
   useEffect(() => {
     fetch("/api/credito/dossie")
@@ -91,7 +91,7 @@ export default function Credito() {
               {brl(d.limiteSugerido)}
             </p>
             <p className="mt-2.5 text-[12.5px] leading-snug text-muted">
-              Sem hipotecar a fazenda.
+              Estimativa do seu histórico. Garantia e limite final são de quem empresta.
             </p>
           </div>
         </div>
@@ -119,7 +119,7 @@ export default function Credito() {
               </p>
             </div>
             <div className="bg-raised px-3.5 py-3">
-              <p className="text-[11.5px] text-muted">Passando pra cá, economiza</p>
+              <p className="text-[11.5px] text-muted">Trocando, economizaria</p>
               <p className="tnum mt-1 text-[17px] font-bold tracking-tight text-brand">
                 {brl(economiaPortabilidade)}
               </p>
@@ -127,24 +127,25 @@ export default function Credito() {
           </div>
 
           <p className="mt-3.5 text-[13px] leading-relaxed text-muted">
-            Com a sua nota {d.faixa}, dá para trocar essa dívida por uma de{" "}
-            {melhorTaxa.toFixed(1).replace(".", ",")}% ao ano. A troca é digital e leva poucos dias
-            úteis — você não precisa ir ao banco antigo.
+            Com a sua nota {d.faixa}, há proposta de{" "}
+            {melhorTaxa.toFixed(1).replace(".", ",")}% ao ano para quitar essa dívida. A troca é feita
+            com o banco novo, que paga o antigo, e a garantia precisa ser refeita.
           </p>
 
           <div className="mt-4">
             <Botao
               variante="suave"
               largura="cheia"
-              onClick={() => setPediuPortabilidade(true)}
-              disabled={pediuPortabilidade}
+              onClick={() => setPediuProposta(true)}
+              disabled={pediuProposta}
             >
-              {pediuPortabilidade ? "Portabilidade pedida" : "Trazer essa dívida pra cá"}
+              {pediuProposta ? "Proposta pedida" : "Pedir proposta de troca"}
             </Botao>
           </div>
 
           <p className="mt-3 text-[11.5px] leading-relaxed text-faint">
-            Portabilidade de crédito pelo Open Finance, disponível desde fevereiro de 2026.
+            A portabilidade pelo Open Finance começou em fevereiro de 2026 só para crédito pessoal. Crédito
+            rural ainda não entrou: a troca segue o caminho tradicional.
           </p>
         </Tile>
       </section>
@@ -271,8 +272,9 @@ export default function Credito() {
       )}
 
       <Dica icone="olho">
-        A gente mostra o custo total, não só a taxa da propaganda. A escolha é sua — a Coope não indica
-        nenhuma.
+        A Coope não empresta e não escolhe por você: mostra o custo total, não só a taxa da propaganda, e
+        leva o seu histórico a quem empresta, com a sua autorização. O histórico ajuda a negociar taxa e
+        limite. Não substitui a garantia.
       </Dica>
     </div>
   );

@@ -27,7 +27,7 @@ export function Chrome({ children }: { children: ReactNode }) {
   if (path.startsWith("/pesquisa")) return <>{children}</>;
 
   // O console é leitura de dado denso: rolagem suave atrapalha a varredura.
-  const ehConsole = path.startsWith("/motor");
+  const ehConsole = path.startsWith("/motor") || path.startsWith("/contador");
 
   return (
     <div className="site-escuro min-h-screen bg-[--fundo] text-[--tinta] antialiased">

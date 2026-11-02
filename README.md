@@ -1,14 +1,26 @@
 # Coope — protótipo
 
-Protótipo de demonstração da camada de orquestração financeira para o produtor
-rural pessoa física: captura do documento fiscal na origem, apuração contínua,
-dossiê de crédito verificável e liquidação em conta de titularidade do produtor.
+Protótipo da Coope revisto em novembro de 2026: a reforma tributária do campo,
+pronta para o contador. A Coope lê as notas que já estão na SEFAZ e os extratos
+do Open Finance (com consentimento do produtor) e entrega ao escritório de
+contabilidade a carteira rural conferida, mês a mês: quem vira contribuinte de
+IBS/CBS em 2027, CNPJ, notas sem os campos novos, a escolha entre resultado e
+presunção de 20% no imposto de renda e o livro caixa. Crédito ficou para a fase 3,
+por parceiros; conta, seguro e hedge saíram do MVP.
 
 - **Site de investidores:** `/`
-- **App do produtor:** `/app` — Início, Imposto, Crédito, Conta, Conversa
-- **Telas de apoio:** Segurança, Visão da cooperativa, Números do negócio
-- **Motor de decisão:** `/motor`
+- **Painel do contador:** `/contador` (o cliente pagante é o escritório)
+- **App do produtor:** `/app` — Início, Imposto (com a aba Reforma 2027 em
+  `/app/reforma`), Crédito, Conta, Conversa
+- **Telas de apoio:** Segurança, Números do negócio, Cooperativa e Motor de
+  crédito (as duas últimas são fase 3)
 - **Pesquisa com produtores:** `/pesquisa`, e `/pesquisa/resultados` para ler as respostas
+
+As regras da reforma ficam em `src/lib/reforma.ts`, com as premissas e as fontes
+ao lado de cada número (alíquota de referência calculada pelo TCU em 28/10/2026,
+pendente do Senado até 15/12/2026; limite de R$ 3,6 milhões da LC 214/2025). O
+imposto de renda em `src/lib/engine.ts` compara as duas formas legais (resultado
+e presunção de 20%, Lei 8.023/1990, art. 5º) em vez de tratar os 20% como multa.
 
 ## Rodar localmente
 
@@ -143,8 +155,9 @@ o CPF, as notas fiscais, as contas bancárias e as ofertas de crédito são
 fictícios. Nenhuma integração real com SEFAZ, Open Finance, instituição de
 pagamento ou financiador está ativa.
 
-Os números de mercado citados no site de investidores vêm de fontes públicas
-(Cepea/Esalq-USP, CNA, Serasa Experian, Banco Central, CVM, Ministério da
-Agricultura) e estão creditados nas próprias seções. As projeções de receita
-são um piloto simulado para dimensionar ordem de grandeza — não são resultado
-auditado nem projeção financeira.
+Os números de mercado e de regra citados no site vêm de fontes públicas (Receita
+Federal via CNA, TCU, LC 214/2025, Ajuste SINIEF 27/2024, Banco Central, CVM,
+Serasa Experian) e estão creditados nas próprias seções. Preços e metas de receita
+são hipóteses a validar com escritórios de contabilidade, não resultado nem
+projeção financeira: a Coope ainda não tem cliente pagante. O escritório e os
+produtores do painel do contador são fictícios.

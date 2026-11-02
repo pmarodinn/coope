@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   Barra,
@@ -20,8 +21,8 @@ import {
   type LancamentoLCDPR,
   type Natureza,
 } from "@/lib/domain";
-import { brl, dataBR } from "@/lib/engine";
-import { NOTAS, PRODUTOR } from "@/lib/seed";
+import { ALIQUOTA_IRPF, brl, dataBR } from "@/lib/engine";
+import { NOTAS, PRODUTOR, TRANSACOES } from "@/lib/seed";
 
 type Resposta = { apuracao: ApuracaoFiscal; lancamentos: LancamentoLCDPR[] };
 
@@ -105,48 +106,152 @@ export default function Imposto() {
   const recentes = [...NOTAS].reverse();
   const visiveis = verTudo ? recentes.slice(0, 40) : recentes.slice(0, 6);
 
+  const real = a.irSobreResultadoReal;
+  const presumido = a.irSobrePresumido;
+  const maiorIR = Math.max(real, presumido, 1);
+  const opcoes = [
+    {
+      chave: "resultado" as const,
+      titulo: "Pelo resultado",
+      sub: "O que sobrou: vendas menos gastos",
+      valor: real,
+    },
+    {
+      chave: "presumido" as const,
+      titulo: "Pela presunção de 20%",
+      sub: "A lei deixa tratar 20% do que vendeu como lucro",
+      valor: presumido,
+    },
+  ];
+
+  // Movimentações do extrato sem nota: o resíduo que o contador só acha no
+  // fechamento. Aparecem porque o Open Finance traz o extrato inteiro.
+  const semNota = TRANSACOES.filter((t) => !t.conciliadaCom);
+  const valorSemNota = semNota.reduce((s, t) => s + t.valor, 0);
+  const bancos = new Set(TRANSACOES.map((t) => t.instituicao)).size;
+
   return (
     <div className="space-y-5 pt-1">
       <h1 className="px-1 text-[22px] font-bold tracking-tight">Seu imposto</h1>
 
-      {/* Comparação */}
-      <Tile className="rise overflow-hidden">
-        <div className="space-y-4 p-5">
-          <div>
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="text-[13.5px] font-medium text-muted">Sem organizar as notas</span>
-              <span className="tnum text-[17px] font-bold text-bad">{brl(a.irSobreBaseArbitrada)}</span>
-            </div>
-            <div className="mt-2">
-              <Barra valor={1} tom="bad" />
-            </div>
-          </div>
+      <div className="grid grid-cols-2 gap-1 rounded-full bg-raised p-1">
+        <span className="rounded-full bg-surface py-2 text-center text-[13px] font-semibold text-ink shadow-card">
+          Imposto de renda
+        </span>
+        <Link
+          href="/app/reforma"
+          className="rounded-full py-2 text-center text-[13px] font-semibold text-muted transition-colors active:bg-line"
+        >
+          Reforma 2027
+        </Link>
+      </div>
 
-          <div>
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="text-[13.5px] font-medium text-muted">Organizando com a Coope</span>
-              <span className="tnum text-[17px] font-bold text-brand">
-                {brl(a.irSobreResultadoReal)}
-              </span>
-            </div>
-            <div className="mt-2">
-              <Barra valor={a.irSobreResultadoReal / a.irSobreBaseArbitrada} />
-            </div>
-          </div>
+      {/* As duas formas legais */}
+      <Tile className="rise overflow-hidden">
+        <div className="px-5 pb-1 pt-5">
+          <p className="text-[13px] font-medium text-muted">Duas formas que a lei permite</p>
+        </div>
+        <div className="space-y-4 px-5 pb-5 pt-3">
+          {opcoes.map((o) => {
+            const melhor = a.melhorOpcao === o.chave;
+            return (
+              <div key={o.chave}>
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="text-[14px] font-semibold text-ink">{o.titulo}</span>
+                    {melhor && <Chip tom="bom">melhor este ano</Chip>}
+                  </span>
+                  <span className={`tnum shrink-0 text-[17px] font-bold ${melhor ? "text-brand" : "text-muted"}`}>
+                    {brl(o.valor)}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-[12px] text-faint">{o.sub}</p>
+                <div className="mt-2">
+                  <Barra valor={o.valor / maiorIR} tom={melhor ? undefined : "warn"} />
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         <div className="bg-brand-soft px-5 py-4">
-          <p className="text-[13px] font-medium text-muted">Você economiza</p>
-          <p className="tnum mt-1 text-[32px] font-bold leading-none tracking-tight text-brand">
-            {brl(a.economiaTributaria)}
+          <p className="text-[13px] font-medium text-muted">Diferença entre as duas</p>
+          <p className="tnum mt-1 text-[28px] font-bold leading-none tracking-tight text-brand">
+            {brl(a.diferencaOpcoes)}
+          </p>
+          <p className="mt-2 text-[12px] leading-relaxed text-muted">
+            A escolha é sua, mas só existe com o livro caixa completo. Sem ele, a Receita arbitra os 20%
+            e escolhe por você.
           </p>
         </div>
       </Tile>
 
       <Dica>
-        Quem não comprova os gastos paga imposto sobre um lucro estimado, bem maior que o de verdade.
-        Com as notas no lugar, você paga sobre o que realmente sobrou.
+        Os 20% não são multa: são uma opção da lei, boa para quem tem margem acima disso. O que a Coope
+        faz é manter o livro em dia durante o ano, para você e seu contador escolherem em novembro, e
+        não descobrirem em abril.
       </Dica>
+
+      {/* Planejamento antes do fim do ano */}
+      <section>
+        <Titulo>Antes de 31 de dezembro</Titulo>
+        <Tile className="p-5">
+          <p className="text-[14px] font-semibold leading-snug">
+            Pagar em dezembro adia imposto. Não economiza.
+          </p>
+          <p className="mt-2 text-[13px] leading-relaxed text-muted">
+            No livro do produtor vale a data do pagamento. Se R$ 1 milhão de insumo da próxima safra for
+            pago em dezembro, e não em janeiro, o imposto deste ano cai cerca de{" "}
+            <span className="tnum font-semibold text-ink">{brl(1_000_000 * ALIQUOTA_IRPF)}</span> e o do
+            ano que vem sobe o mesmo tanto. Vale quando o caixa permite e o ano que vem promete ser mais
+            fraco.
+          </p>
+          <p className="mt-3 text-[11.5px] leading-relaxed text-faint">
+            Só conta gasto real da atividade, com nota. Combine com seu contador antes de pagar.
+          </p>
+        </Tile>
+      </section>
+
+      {/* Conferência com o banco: o lado do caixa */}
+      <section>
+        <Titulo>Notas conferidas com o banco</Titulo>
+        <Tile className="overflow-hidden">
+          <div className="p-5">
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="text-[13.5px] font-medium text-ink">
+                Movimentações com nota
+              </span>
+              <span className="tnum text-[17px] font-bold text-brand">
+                {Math.round(a.cobertura.percentual * 100)}%
+              </span>
+            </div>
+            <div className="mt-2">
+              <Barra valor={a.cobertura.percentual} />
+            </div>
+            <p className="mt-3 text-[12.5px] leading-relaxed text-muted">
+              {a.cobertura.transacoesConciliadas} de {a.cobertura.transacoesTotais} movimentações dos seus{" "}
+              {bancos} bancos batem com uma nota. O extrato vem pelo Open Finance, com a sua autorização:
+              é ele que diz em que dia o dinheiro saiu, e é esse dia que vale para o imposto.
+            </p>
+          </div>
+          {semNota.map((t) => (
+            <div key={t.id}>
+              <Divisor />
+              <Linha
+                icone="olho"
+                titulo={t.descricao}
+                sub={`${dataBR(t.data)} · ${t.instituicao} · sem nota`}
+                valor={`${t.tipo === "credito" ? "+" : "−"} ${brl(t.valor)}`}
+                tom="ink"
+              />
+            </div>
+          ))}
+        </Tile>
+        <p className="mt-2.5 px-1 text-[12.5px] leading-relaxed text-faint">
+          {semNota.length} movimentações somando {brl(valorSemNota)} não têm nota. O contador decide o que
+          entra no livro e o que precisa de documento.
+        </p>
+      </section>
 
       {/* Conta da safra */}
       <section>
@@ -264,7 +369,7 @@ export default function Imposto() {
           )}
         </Tile>
         <p className="mt-2.5 px-1 text-[12.5px] leading-relaxed text-faint">
-          Chegam sozinhas da Receita. Você não digita nada.
+          Chegam sozinhas da SEFAZ, pelo certificado digital. Você não digita nada.
         </p>
       </section>
 
@@ -276,19 +381,19 @@ export default function Imposto() {
               <Icone nome="check" tamanho={19} />
             </span>
             <div className="min-w-0">
-              <p className="text-[14.5px] font-semibold">Pronto para entregar</p>
-              <p className="mt-0.5 text-[12.5px] text-muted">Falta só sua assinatura digital.</p>
+              <p className="text-[14.5px] font-semibold">Enviado ao contador</p>
+              <p className="mt-0.5 text-[12.5px] text-muted">Ele revisa e assina com o certificado digital.</p>
             </div>
           </div>
         ) : (
           <>
-            <p className="text-[14.5px] font-semibold">Declaração do ano</p>
+            <p className="text-[14.5px] font-semibold">Livro caixa do ano</p>
             <p className="mt-1 text-[13px] leading-relaxed text-muted">
-              Montamos tudo com as suas notas. É só conferir e assinar.
+              Montamos o livro com as notas e o extrato. Seu contador revisa e assina.
             </p>
             <div className="mt-4">
               <Botao onClick={enviar} carregando={enviando} largura="cheia">
-                Preparar declaração
+                Enviar para o contador
               </Botao>
             </div>
           </>
@@ -296,7 +401,8 @@ export default function Imposto() {
       </Tile>
 
       <p className="px-1 pb-2 text-[11.5px] leading-relaxed text-faint">
-        Demonstração com dados de exemplo. Não substitui seu contador.
+        Demonstração com dados de exemplo. Imposto calculado com a alíquota marginal de 27,5%, uma
+        aproximação da tabela progressiva. Não substitui seu contador.
       </p>
     </div>
   );

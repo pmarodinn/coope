@@ -145,11 +145,19 @@ export interface ApuracaoFiscal {
   despesasCusteio: number;
   investimentos: number;
   resultadoReal: number;
-  /** Base arbitrada em 20% da receita bruta (IN RFB 83/2001, art. 23-A). */
-  baseArbitrada: number;
+  /**
+   * 20% da receita bruta. É uma opção legal do produtor PF (Lei nº 8.023/1990,
+   * art. 5º), que perde o direito de compensar prejuízos. É também a base do
+   * arbitramento quando falta escrituração (Lei nº 9.250/1995, art. 18, § 2º):
+   * sem livro caixa, o Fisco escolhe por ele.
+   */
+  basePresumida: number;
   irSobreResultadoReal: number;
-  irSobreBaseArbitrada: number;
-  economiaTributaria: number;
+  irSobrePresumido: number;
+  /** A forma mais barata para este exercício. */
+  melhorOpcao: "resultado" | "presumido";
+  /** Quanto a forma mais cara custaria a mais. Vem da lei, não da Coope. */
+  diferencaOpcoes: number;
   /** Percentual do resultado sobre a receita bruta. */
   margem: number;
   lancamentos: number;

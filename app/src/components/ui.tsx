@@ -27,6 +27,12 @@ const PATHS: Record<string, ReactNode> = {
     </>
   ),
   chat: <path d="M4 5h16v11H9l-5 4V5Z" />,
+  calendario: (
+    <>
+      <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" />
+      <path d="M3.5 10h17M8 3v4M16 3v4" />
+    </>
+  ),
   seta: <path d="m9 5 7 7-7 7" />,
   mais: <path d="M12 5v14M5 12h14" />,
   enviar: <path d="M4 12h15m0 0-5.5-5.5M19 12l-5.5 5.5" />,

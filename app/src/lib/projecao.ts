@@ -126,8 +126,9 @@ export function compromissos(): Compromissos {
 export function resumoImposto() {
   const a = apurar(gerarLCDPR());
   return {
-    economia: a.economiaTributaria,
-    aPagar: a.irSobreResultadoReal,
-    semOrganizar: a.irSobreBaseArbitrada,
+    melhorOpcao: a.melhorOpcao,
+    aPagar: Math.min(a.irSobreResultadoReal, a.irSobrePresumido),
+    outraOpcao: Math.max(a.irSobreResultadoReal, a.irSobrePresumido),
+    diferenca: a.diferencaOpcoes,
   };
 }

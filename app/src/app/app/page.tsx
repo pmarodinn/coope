@@ -7,12 +7,18 @@ import { brl } from "@/lib/engine";
 import type { Compromissos, MesProjetado } from "@/lib/projecao";
 import type { Movimento } from "@/lib/store";
 import { PRODUTOR } from "@/lib/seed";
+import { diasAte, PRAZOS } from "@/lib/reforma";
 
 interface Resumo {
   conta: { saldo: number; aberta: boolean; agencia: string; numero: string };
   credito: Compromissos;
   projecao: MesProjetado[];
-  imposto: { economia: number; aPagar: number; semOrganizar: number };
+  imposto: {
+    melhorOpcao: "resultado" | "presumido";
+    aPagar: number;
+    outraOpcao: number;
+    diferenca: number;
+  };
   movimentos: Movimento[];
 }
 
@@ -53,6 +59,26 @@ export default function Inicio() {
       <p className="px-1 text-[15px] text-muted">
         Olá, <span className="font-semibold text-ink">{primeiroNome}</span>
       </p>
+
+      {/* 0. O prazo que vem primeiro */}
+      <Link href="/app/reforma" className="block">
+        <Tile className="rise flex items-center gap-3.5 p-4">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-warn-soft text-warn">
+            <Icone nome="calendario" tamanho={21} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[14px] font-semibold leading-snug">
+              Faltam {diasAte(PRAZOS.cbsECnpj)} dias para a reforma
+            </span>
+            <span className="mt-0.5 block text-[12.5px] leading-snug text-muted">
+              Em 2027 você recolhe IBS e CBS todo mês. Falta o CNPJ.
+            </span>
+          </span>
+          <span className="shrink-0 text-faint">
+            <Icone nome="seta" tamanho={16} />
+          </span>
+        </Tile>
+      </Link>
 
       {/* 1. Saldo */}
       <Tile className="rise p-5">
@@ -265,19 +291,23 @@ export default function Inicio() {
           Seu imposto
         </Titulo>
         <Tile className="overflow-hidden">
-          <Linha titulo="Vai pagar este ano" valor={brl(imposto.aPagar)} />
+          <Linha
+            titulo={imposto.melhorOpcao === "resultado" ? "Pelo resultado" : "Pela presunção de 20%"}
+            sub="A forma mais barata este ano"
+            valor={brl(imposto.aPagar)}
+            tom="brand"
+          />
           <Divisor />
           <Linha
-            titulo="Pagaria sem organizar"
-            sub="Se a Receita estimasse seu lucro"
-            valor={brl(imposto.semOrganizar)}
-            tom="bad"
+            titulo={imposto.melhorOpcao === "resultado" ? "Pela presunção de 20%" : "Pelo resultado"}
+            sub="A outra forma que a lei permite"
+            valor={brl(imposto.outraOpcao)}
           />
           <div className="bg-brand-soft px-4 py-3.5">
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="text-[13px] font-semibold text-brand">Você economiza</span>
-              <span className="tnum text-[18px] font-bold text-brand">{brl(imposto.economia)}</span>
-            </div>
+            <p className="text-[12.5px] leading-relaxed text-muted">
+              A escolha é sua e vale {brl(imposto.diferenca)} este ano. Ela só existe com o livro caixa em
+              dia.
+            </p>
           </div>
         </Tile>
       </section>

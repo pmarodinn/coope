@@ -1,40 +1,31 @@
-import { apurar, gerarLCDPR } from "./engine";
-import { NOTAS } from "./seed";
 
 /**
- * Números do negócio e da carteira de uma cooperativa parceira.
+ * Números do negócio, revistos em novembro de 2026.
  *
- * A escala é sintética — um piloto plausível —, mas as taxas e o ticket médio
- * derivam do produtor real da demo, para que as contas fechem entre as telas.
+ * Quem paga é o escritório de contabilidade, por produtor atendido. Tudo aqui
+ * é hipótese de preço e de meta, a ser testada nas conversas com contadores;
+ * nada é resultado. A Coope ainda não tem cliente pagante.
  */
 
-/**
- * Piloto: uma cooperativa do Mato Grosso.
- *
- * O produtor da demo é grande (R$ 21,5 mi de receita) e não representa a média
- * da carteira. Projetar a economia dele sobre os 184 produtores inflaria a
- * receita, então o ticket e a economia média são calibrados para baixo.
- */
-const PILOTO = {
-  produtoresAtivos: 184,
-  cooperativas: 1,
-  /** Um custeio por produtor por ciclo, distribuído ao longo do ano. */
-  operacoesMes: 15,
-  ticketMedio: 1_500_000,
-  /** Média da carteira, não o caso do produtor da demo. */
-  economiaMediaAnual: 285_000,
-  taxaAprovacao: 0.72,
-  timeToMoneyHoras: 11,
-  /** Inadimplência do barter da cooperativa antes da plataforma. */
-  inadimplenciaBarterAntes: 0.094,
-};
-
-/** Faixas do Lean Canvas, no piso conservador. */
-export const RECEITA = {
-  takeRate: 0.02,
-  successFee: 0.1,
-  rebatePorOperacao: 4_200,
+/** Preço por CPF por mês, cobrado do escritório. Hipótese a validar. */
+export const PRECO = {
+  contribuinte: 120,
+  naoContribuinte: 40,
+  /** Diagnóstico avulso da opção pelo regime regular, abaixo de R$ 3,6 mi. */
+  diagnostico: 600,
 } as const;
+
+/** Um escritório de cidade agrícola, como o da demonstração. */
+export const ESCRITORIO_TIPICO = { produtores: 30, contribuintes: 12 } as const;
+
+/** Produtores com receita acima de R$ 3,6 mi (RFB, DIRPF atividade rural 2023, via CNA). */
+export const PRODUTORES_OBRIGATORIOS = 43_600;
+
+export const METAS = [
+  { prazo: "2 semanas", meta: "20 conversas e 5 pilotos manuais", criterio: "3 de 5 contadores dizem que 2027 é problema de capacidade" },
+  { prazo: "90 dias", meta: "3 escritórios pagando", criterio: "Cobrança desde o primeiro mês, mesmo que pequena" },
+  { prazo: "12 meses", meta: "50 escritórios e 1.500 produtores", criterio: "Churn mensal abaixo de 3%" },
+] as const;
 
 export interface Metrica {
   chave: string;
@@ -48,102 +39,107 @@ export interface FonteReceita {
   comoGanha: string;
   valorMes: number;
   fatia: number;
-  /** Fontes que dependem de validação regulatória ficam marcadas. */
+  /** Fontes adiadas ou removidas ficam marcadas, com o motivo. */
   ressalva: string | null;
 }
 
-function base() {
-  const a = apurar(gerarLCDPR());
-  const gmvMes = PILOTO.operacoesMes * PILOTO.ticketMedio;
-  return { a, ticketCredito: PILOTO.ticketMedio, gmvMes };
+const brl = (v: number) =>
+  v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+
+function receitaEscritorio() {
+  const { produtores, contribuintes } = ESCRITORIO_TIPICO;
+  return contribuintes * PRECO.contribuinte + (produtores - contribuintes) * PRECO.naoContribuinte;
 }
 
 export function metricas(): Metrica[] {
-  const { a, gmvMes, ticketCredito } = base();
-  const brl = (v: number) =>
-    v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
-
+  const porEscritorio = receitaEscritorio();
+  const nucleo = PRODUTORES_OBRIGATORIOS * PRECO.contribuinte * 12;
   return [
     {
-      chave: "gmv",
-      rotulo: "Crédito originado no mês",
-      valor: `R$ ${(gmvMes / 1_000_000).toFixed(1).replace(".", ",")} mi`,
-      nota: `${PILOTO.operacoesMes} operações · ticket médio de ${brl(ticketCredito)}`,
+      chave: "clientes",
+      rotulo: "Escritórios pagando hoje",
+      valor: "0",
+      nota: "Ponto de partida honesto. A meta de 90 dias é 3.",
     },
     {
-      chave: "produtores",
-      rotulo: "Produtores ativos",
-      valor: String(PILOTO.produtoresAtivos),
-      nota: "Numa cooperativa parceira",
+      chave: "pesquisa",
+      rotulo: "Produtores ouvidos",
+      valor: "11",
+      nota: "Pesquisa de dor, out/2026. Amostra pequena e fora do perfil-alvo.",
     },
     {
-      chave: "notas",
-      rotulo: "Notas processadas no ciclo",
-      valor: (PILOTO.produtoresAtivos * NOTAS.length).toLocaleString("pt-BR"),
-      nota: "Capturadas da SEFAZ, sem digitação",
+      chave: "escritorio",
+      rotulo: "Receita por escritório",
+      valor: `${brl(porEscritorio)}/mês`,
+      nota: `${ESCRITORIO_TIPICO.produtores} produtores, ${ESCRITORIO_TIPICO.contribuintes} deles contribuintes obrigatórios.`,
     },
     {
-      chave: "ttm",
-      rotulo: "Time-to-money médio",
-      valor: `${PILOTO.timeToMoneyHoras} h`,
-      nota: "Contra 45 a 60 dias no ciclo tradicional",
+      chave: "meta12",
+      rotulo: "Meta de 12 meses",
+      valor: `R$ ${((porEscritorio * 50 * 12) / 1_000_000).toFixed(1).replace(".", ",")} mi/ano`,
+      nota: "50 escritórios × 30 produtores. Hipótese, não projeção.",
     },
     {
-      chave: "aprovacao",
-      rotulo: "Aprovação nos Fiagros",
-      valor: `${Math.round(PILOTO.taxaAprovacao * 100)}%`,
-      nota: "Dos dossiês submetidos a financiadores parceiros",
+      chave: "nucleo",
+      rotulo: "Teto do núcleo obrigatório",
+      valor: `R$ ${(nucleo / 1_000_000).toFixed(1).replace(".", ",")} mi/ano`,
+      nota: `${PRODUTORES_OBRIGATORIOS.toLocaleString("pt-BR")} produtores × ${brl(PRECO.contribuinte)} × 12. Cunha pequena de propósito.`,
     },
     {
-      chave: "economia",
-      rotulo: "Economia tributária média",
-      valor: brl(PILOTO.economiaMediaAnual),
-      nota: `Por produtor, no ano. O caso da demo (${brl(a.economiaTributaria)}) é de um produtor grande, acima da média.`,
+      chave: "validacao",
+      rotulo: "Custo da validação",
+      valor: "2 semanas",
+      nota: "Conversas, planilha e WhatsApp. Sem código novo.",
     },
   ];
 }
 
 export function fontesReceita(): FonteReceita[] {
-  const { gmvMes } = base();
-
-  const take = gmvMes * RECEITA.takeRate;
-  const success =
-    (PILOTO.economiaMediaAnual * RECEITA.successFee * PILOTO.produtoresAtivos) / 12;
-  const rebate = PILOTO.operacoesMes * RECEITA.rebatePorOperacao;
-  const float = 0;
-
-  const total = take + success + rebate + float;
-
+  const { produtores, contribuintes } = ESCRITORIO_TIPICO;
   const itens: Omit<FonteReceita, "fatia">[] = [
     {
-      nome: "Take rate sobre o crédito",
-      comoGanha: `${(RECEITA.takeRate * 100).toFixed(0)}% do volume originado para os financiadores parceiros. A faixa do plano vai de 1% a 3%.`,
-      valorMes: take,
+      nome: "Assinatura por produtor contribuinte",
+      comoGanha: `${brl(PRECO.contribuinte)} por CPF por mês: notas, apuração mensal de IBS e CBS conferida contra a pré-apuração do Fisco, livro caixa e alertas.`,
+      valorMes: contribuintes * PRECO.contribuinte,
       ressalva: null,
     },
     {
-      nome: "Success fee sobre o imposto",
-      comoGanha: `${(RECEITA.successFee * 100).toFixed(0)}% da economia tributária efetivamente comprovada, calculada sobre a média da carteira.`,
-      valorMes: success,
+      nome: "Assinatura por produtor não contribuinte",
+      comoGanha: `${brl(PRECO.naoContribuinte)} por CPF por mês: CNPJ, notas eletrônicas, livro caixa e acompanhamento do limite de R$ 3,6 mi.`,
+      valorMes: (produtores - contribuintes) * PRECO.naoContribuinte,
       ressalva: null,
     },
     {
-      nome: "Rebate de seguro e hedge",
-      comoGanha: "Corretagem repassada pela corretora parceira registrada.",
-      valorMes: rebate,
-      ressalva: "Depende de parceria com corretora habilitada na SUSEP.",
+      nome: "Diagnóstico da opção pelo regime regular",
+      comoGanha: `${brl(PRECO.diagnostico)} por produtor abaixo do limite, uma vez por ano, com as notas reais dele.`,
+      valorMes: 0,
+      ressalva: "Avulso e sazonal (novembro e dezembro). Fica fora da receita recorrente.",
     },
     {
-      nome: "Float sobre saldo parado",
-      comoGanha: "Remuneração do saldo em repouso nas contas.",
-      valorMes: float,
-      ressalva:
-        "Não considerado. Com contas de titularidade do produtor, a remuneração do saldo é do titular — a Res. Conjunta nº 16/2025 esvazia essa linha de receita.",
+      nome: "Indicação de crédito a parceiros",
+      comoGanha: "Comissão paga pelo financiador quando o produtor, com consentimento, leva o histórico mensal a ele.",
+      valorMes: 0,
+      ressalva: "Fase 3. Só depois de 12 meses de apuração mensal da carteira, e via parceiro regulado.",
+    },
+    {
+      nome: "Success fee sobre economia de imposto",
+      comoGanha: "Removida.",
+      valorMes: 0,
+      ressalva: "A diferença entre resultado real e presunção de 20% é uma escolha que a lei já dá. Cobrar por ela seria vender o que não é nosso.",
+    },
+    {
+      nome: "Float sobre saldo em conta",
+      comoGanha: "Removida.",
+      valorMes: 0,
+      ressalva: "Conta de titularidade do produtor (Res. Conjunta nº 16/2025): o rendimento é dele. E conta saiu do MVP.",
     },
   ];
-
+  const total = itens.reduce((s, i) => s + i.valorMes, 0);
   return itens.map((i) => ({ ...i, fatia: total > 0 ? i.valorMes / total : 0 }));
 }
+
+/** Receita base do piloto da cooperativa, mantida para a tela de fase 3. */
+const PILOTO = { inadimplenciaBarterAntes: 0.094 } as const;
 
 /* ---------------- carteira da cooperativa ---------------- */
 

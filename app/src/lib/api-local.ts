@@ -19,6 +19,8 @@ const ROTAS: Record<string, Manipulador> = {
   "GET /api/resumo": () => s.lerResumo(),
   "GET /api/compliance": () => s.lerCompliance(),
   "GET /api/negocio": () => s.lerNegocio(),
+  "GET /api/reforma": () => s.lerReforma(),
+  "GET /api/contador": () => s.lerCarteira(),
   "GET /api/motor": () => ({
     status: 200,
     corpo: { casos: CASOS.map(({ extrato: _, ...c }) => c), ...analise(casoAtual) },
