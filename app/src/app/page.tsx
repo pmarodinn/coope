@@ -408,7 +408,8 @@ const NORMAS = [
 ];
 
 const LIMITES = [
-  "Zero clientes. O protótipo demonstra a tese, não a comprova, e a pesquisa ouviu 11 produtores, quase todos fora do perfil-alvo.",
+  "Nada está em operação: não há sistema funcionando, integração real, cliente nem receita. O que existe é um protótipo navegável da arquitetura, com dados fictícios.",
+  "A pesquisa de mercado está em andamento: 11 respostas até agora, quase todas fora do perfil-alvo. Os resultados são preliminares e precisam de mais respostas.",
   "O Fisco vai pré-preencher a apuração mensal. Se conferir e planejar não valer dinheiro para o escritório, a cunha encolhe.",
   "O software contábil que o escritório já usa vai atualizar para IBS e CBS. Precisamos ser melhores no rural, não só existir.",
   "A alíquota da CBS e o crédito presumido ainda dependem de ato do governo. Toda simulação mostra as premissas.",
@@ -907,9 +908,9 @@ function Produto() {
   return (
     <>
       <Secao id="produto" className="pb-10 pt-24 md:pt-32">
-        <p className="rotulo mb-5">Protótipo funcional</p>
+        <p className="rotulo mb-5">Protótipo de arquitetura</p>
         <h2 className="display-2 max-w-[24ch] text-[clamp(1.8rem,3.4vw,2.7rem)]">
-          O painel do escritório e o app do produtor já rodam.
+          Como seria: o painel do escritório e o app do produtor.
         </h2>
         <Reveal delay={0.1}>
           <Link href="/contador" className="group mt-10 block">
@@ -927,8 +928,8 @@ function Produto() {
               <ArrowUpRight size={15} weight="bold" className="text-[--acento]" />
             </p>
             <p className="mt-1.5 max-w-[60ch] text-[13px] leading-relaxed text-[--tinta-2]">
-              Doze produtores de um escritório de Sorriso, ordenados pelo que vence primeiro. É a tela que
-              o cliente pagante usa.
+              Protótipo navegável com escritório e produtores fictícios, sem integração real. Mostra a tela
+              que o cliente pagante usaria.
             </p>
           </Link>
         </Reveal>
@@ -1075,11 +1076,11 @@ function Evidencia() {
       <div className="grid gap-14 lg:grid-cols-2 lg:gap-20">
         <div>
           <p className="rotulo mb-5">O que ouvimos</p>
-          <h2 className="display-2 max-w-[18ch]">11 produtores, e uma tese que não sobreviveu.</h2>
+          <h2 className="display-2 max-w-[18ch]">Pesquisa em andamento: o que 11 respostas já sugerem.</h2>
           <p className="mt-5 max-w-[46ch] text-[15px] leading-relaxed text-[--tinta-2]">
-            A pesquisa de dor de outubro mediu o que o produtor já vive, não o interesse num produto. Oito
-            dos onze são de Minas Gerais e sete faturam até R$ 1 milhão: não é o perfil-alvo. Mesmo assim,
-            ela derrubou duas certezas.
+            A pesquisa mede o que o produtor já vive, não o interesse num produto, e continua recebendo
+            respostas. Das 11 primeiras, 8 são de Minas Gerais e 7 faturam até R$ 1 milhão: não é o
+            perfil-alvo. Os resultados são preliminares, mas já colocam em dúvida duas certezas.
           </p>
           <ul className="mt-8 space-y-4">
             {[
@@ -1118,8 +1119,8 @@ function Evidencia() {
               ))}
             </div>
             <p className="mt-7 border-t border-[--linha] pt-5 text-[12px] leading-relaxed text-[--tinta-3]">
-              Pesquisa própria, outubro de 2026, respostas fechadas. Amostra pequena e de conveniência: serve
-              para derrubar hipótese, não para estimar o mercado.
+              Pesquisa própria em andamento desde outubro de 2026, respostas fechadas. Resultado preliminar de
+              amostra pequena e de conveniência: precisa de mais respostas e não estima o mercado.
             </p>
           </div>
         </Reveal>
@@ -1425,7 +1426,7 @@ function Fecho() {
             <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-[--acento-fundo] text-[--acento]">
               <Plant size={21} weight="duotone" />
             </span>
-            <h2 className="display-2 mx-auto mt-6 max-w-[20ch]">O produto está de pé. O que falta é cliente.</h2>
+            <h2 className="display-2 mx-auto mt-6 max-w-[20ch]">A arquitetura está desenhada. O que falta é provar.</h2>
             <p className="mx-auto mt-6 max-w-[54ch] text-[15.5px] leading-relaxed text-[--tinta-2]">
               Duas semanas, vinte conversas, cinco pilotos manuais para provar a porta de entrada. Depois,
               degrau por degrau: o produtor sem contador, o motor de crédito e o marketplace.

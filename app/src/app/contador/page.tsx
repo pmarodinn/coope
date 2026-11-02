@@ -85,7 +85,7 @@ export default function PainelContador() {
     <main className="mx-auto max-w-[1240px] px-4 py-10 sm:px-6 md:py-14">
       <header className="mb-10 flex flex-wrap items-end justify-between gap-6">
         <div className="min-w-0">
-          <p className="rotulo">Painel do contador · {c.escritorio}</p>
+          <p className="rotulo">Protótipo · dados fictícios · painel do contador</p>
           <h1 className="display-2 mt-3 max-w-[22ch]">
             Faltam {c.diasParaCbs} dias. A carteira rural, conferida.
           </h1>

@@ -230,8 +230,8 @@ export default function Negocio() {
       <div className="flex gap-3 rounded-card bg-raised px-4 py-3.5">
         <Chip tom="atencao">hipótese</Chip>
         <p className="text-[12.5px] leading-relaxed text-muted">
-          Preços e metas a testar nas conversas com contadores. Nenhum número aqui é resultado: a Coope
-          ainda não tem cliente pagante.
+          Preços e metas a testar nas conversas com contadores. Nenhum número aqui é resultado: não há
+          sistema em operação, cliente nem receita, só este protótipo com dados fictícios.
         </p>
       </div>
     </div>

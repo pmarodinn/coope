@@ -60,13 +60,13 @@ export function metricas(): Metrica[] {
       chave: "clientes",
       rotulo: "Escritórios pagando hoje",
       valor: "0",
-      nota: "Ponto de partida honesto. A meta de 90 dias é 3.",
+      nota: "Nada em operação: só um protótipo de arquitetura. Meta de 90 dias: 3.",
     },
     {
       chave: "pesquisa",
-      rotulo: "Produtores ouvidos",
+      rotulo: "Respostas da pesquisa",
       valor: "11",
-      nota: "Pesquisa de dor, out/2026. Amostra pequena e fora do perfil-alvo.",
+      nota: "Pesquisa em andamento. Resultados preliminares; precisa de mais respostas.",
     },
     {
       chave: "escritorio",

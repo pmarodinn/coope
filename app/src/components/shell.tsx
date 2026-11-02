@@ -128,7 +128,12 @@ export function Shell({ children }: { children: ReactNode }) {
       {/* Moldura do app: ocupa a tela no celular, vira um aparelho no desktop. */}
       <div className="relative flex h-screen w-full max-w-[430px] flex-col overflow-hidden bg-canvas md:h-[860px] md:max-h-[92vh] md:rounded-[38px] md:shadow-float md:ring-1 md:ring-black/5">
         <header className="flex shrink-0 items-center justify-between gap-3 px-5 pb-3 pt-5">
-          <Logo size={34} />
+          <span className="flex items-center gap-2.5">
+            <Logo size={34} />
+            <span className="rounded-full bg-raised px-2.5 py-1 text-[11px] font-semibold text-muted">
+              protótipo · dados fictícios
+            </span>
+          </span>
           <Menu />
         </header>
 
