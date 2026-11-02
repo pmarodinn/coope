@@ -76,8 +76,8 @@ export default function Negocio() {
         <p className="text-[13px] font-medium text-muted">Um escritório típico paga</p>
         <p className="figure mt-1.5 text-brand">{brl(totalMes)}</p>
         <p className="mt-2.5 text-[13px] leading-relaxed text-muted">
-          Quem paga é o escritório de contabilidade, por produtor atendido. Uma venda traz 30 fazendas de
-          uma vez, sem pedir a nenhum produtor que instale nada.
+          Hoje quem paga é o escritório, por produtor atendido: uma venda traz 30 fazendas. É a porta. Os
+          degraus seguintes são o produtor direto, o crédito originado e o marketplace.
         </p>
       </Tile>
 
@@ -221,8 +221,8 @@ export default function Negocio() {
             ))}
           </div>
           <p className="mt-4 border-t border-line pt-3.5 text-[12px] leading-relaxed text-faint">
-            O módulo fiscal não precisa de licença do Banco Central. Conta e crédito só voltam ao plano
-            depois de 12 meses de apuração mensal e com parceiro regulado.
+            O módulo fiscal não precisa de licença do Banco Central. Motor de crédito e marketplace entram
+            depois de 12 meses de série mensal, por parceiros regulados.
           </p>
         </Tile>
       </section>

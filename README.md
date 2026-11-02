@@ -5,8 +5,10 @@ pronta para o contador. A Coope lê as notas que já estão na SEFAZ e os extrat
 do Open Finance (com consentimento do produtor) e entrega ao escritório de
 contabilidade a carteira rural conferida, mês a mês: quem vira contribuinte de
 IBS/CBS em 2027, CNPJ, notas sem os campos novos, a escolha entre resultado e
-presunção de 20% no imposto de renda e o livro caixa. Crédito ficou para a fase 3,
-por parceiros; conta, seguro e hedge saíram do MVP.
+presunção de 20% no imposto de renda e o livro caixa. A reforma é a porta de entrada,
+não o destino: os degraus seguintes são o produtor resolver sozinho o que hoje paga
+ao contador, um motor de crédito alimentado pelo dado fiscal mensal e um marketplace
+de crédito, insumo e seguro.
 
 - **Site de investidores:** `/`
 - **Painel do contador:** `/contador` (o cliente pagante é o escritório)

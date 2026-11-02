@@ -67,8 +67,8 @@ function Menu() {
               { href: "/app/reforma", icone: "calendario", rotulo: "Reforma 2027" },
               { href: "/app/seguranca", icone: "escudo", rotulo: "Segurança" },
               { href: "/app/negocio", icone: "credito", rotulo: "Números do negócio" },
-              { href: "/app/cooperativa", icone: "conta", rotulo: "Cooperativa (fase 3)" },
-              { href: "/motor", icone: "raio", rotulo: "Motor de crédito (fase 3)" },
+              { href: "/app/cooperativa", icone: "conta", rotulo: "Marketplace: cooperativa" },
+              { href: "/motor", icone: "raio", rotulo: "Motor de crédito" },
             ].map((l) => (
               <div key={l.href}>
                 <Link

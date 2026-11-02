@@ -32,7 +32,8 @@ import {
 /* ================================================================
    Dados. Revisados em 01/11/2026 depois da análise de concorrência:
    cliente é o escritório de contabilidade, a cunha é a reforma
-   tributária e o crédito ficou para a fase 3.
+   tributária é a porta; o destino é o produtor sem contador, o motor
+   de crédito e o marketplace.
    ================================================================ */
 
 /** Dias até 01/01/2027 no momento da build; o navegador recalcula. */
@@ -140,11 +141,42 @@ const TESE = [
     id: "credito",
     icone: Bank,
     titulo: "Crédito",
-    frase: "Crédito vem depois, e com garantia.",
+    frase: "O destino é crédito e marketplace.",
     corpo:
-      "O gargalo do crédito agro hoje é garantia e apetite, não informação. O histórico mensal ajuda a negociar taxa e limite, mas não substitui alienação fiduciária. Por isso crédito é fase 3, por parceiros.",
-    numero: "Fase 3",
-    numeroLegenda: "Depois de 12 meses de apuração mensal da carteira.",
+      "Entrar direto no crédito é brigar com quem tem capital e dado. Depois de doze meses de imposto conferido, a Coope tem o dado que eles compram de terceiros: vira motor de crédito e, em seguida, marketplace de crédito, insumo e seguro.",
+    numero: "Degrau 3",
+    numeroLegenda: "Depois de 12 meses de série mensal conferida.",
+  },
+];
+
+const DEGRAUS = [
+  {
+    n: "1",
+    nome: "Gatilho: a reforma",
+    corpo: "Entramos pelo escritório de contabilidade, com a carteira rural conferida para 2027.",
+    paga: "Escritório, por produtor",
+    quando: "Agora",
+  },
+  {
+    n: "2",
+    nome: "Piloto automático",
+    corpo: "O produtor faz sozinho, no app, o que hoje paga ao contador: livro caixa, IR, IBS/CBS conferido.",
+    paga: "Produtor, assinatura direta",
+    quando: "2027–2028",
+  },
+  {
+    n: "3",
+    nome: "Motor de crédito",
+    corpo: "Doze meses de vendas, compras, caixa e dívidas conferidos viram score e limite.",
+    paga: "Financiador, por crédito originado",
+    quando: "Após 12 meses de série",
+  },
+  {
+    n: "4",
+    nome: "Marketplace",
+    corpo: "Crédito, insumo, seguro e trava de preço pelo custo total, onde o produtor vê o próprio caixa.",
+    paga: "Quem vende, por transação",
+    quando: "Na sequência",
   },
 ];
 
@@ -234,7 +266,7 @@ const TELAS = [
   { src: "/shots/reforma.png", titulo: "Reforma, mês a mês", corpo: "Situação, pendências e a conta de 2027 com as notas reais." },
   { src: "/shots/imposto.png", titulo: "Duas formas legais", corpo: "Resultado ou presunção de 20%, decidido em novembro." },
   { src: "/shots/conversa.png", titulo: "Aviso no WhatsApp", corpo: "O produtor recebe o que importa. O contador decide." },
-  { src: "/shots/credito.png", titulo: "Crédito, fase 3", corpo: "Custo total e garantia à vista. A Coope não empresta." },
+  { src: "/shots/credito.png", titulo: "Crédito, degrau 3", corpo: "Custo total e garantia à vista, com o histórico do próprio produtor." },
 ];
 
 type Marca = "sim" | "parcial" | "nao";
@@ -251,7 +283,7 @@ const CONCORRENTES: { nome: string; nota: string; c: [Marca, Marca, Marca, Marca
   { nome: "Agrolend", nota: "Carteira de R$ 968 mi em 2025", c: ["nao", "nao", "nao", "nao", "sim", "sim"] },
   { nome: "TerraMagna", nota: "Crédito com risco por satélite", c: ["nao", "nao", "nao", "nao", "sim", "sim"] },
   { nome: "Bradesco E-agro", nota: "R$ 6,3 bi em carteira em 2025", c: ["nao", "nao", "nao", "nao", "sim", "sim"] },
-  { nome: "Coope (MVP proposto)", nota: "Para o contador; crédito só na fase 3", c: ["sim", "sim", "sim", "sim", "nao", "nao"] },
+  { nome: "Coope (MVP proposto)", nota: "Começa pelo contador; crédito e marketplace depois", c: ["sim", "sim", "sim", "sim", "nao", "nao"] },
 ];
 
 const COLUNAS = ["Nota da SEFAZ", "Livro caixa", "IBS/CBS mensal", "Para o contador", "Crédito", "Capital próprio"];
@@ -293,7 +325,9 @@ const RECEITA = [
   { nome: "Produtor contribuinte", detalhe: "R$ 120 por CPF por mês, pago pelo escritório", peso: 67, ativo: true },
   { nome: "Produtor não contribuinte", detalhe: "R$ 40 por CPF por mês: CNPJ, notas, livro caixa e limite", peso: 33, ativo: true },
   { nome: "Diagnóstico de opção", detalhe: "R$ 600 avulso, em novembro e dezembro, para quem está abaixo do limite", peso: 0, ativo: false },
-  { nome: "Indicação de crédito", detalhe: "Fase 3, comissão paga por financiador parceiro", peso: 0, ativo: false },
+  { nome: "Assinatura direta do produtor", detalhe: "Degrau 2: o produtor resolve sozinho o que hoje paga ao contador", peso: 0, ativo: false },
+  { nome: "Crédito originado", detalhe: "Degrau 3: 1% a 3% do crédito levado a financiadores", peso: 0, ativo: false },
+  { nome: "Marketplace", detalhe: "Degrau 4: comissão em crédito, insumo e seguro", peso: 0, ativo: false },
   { nome: "Success fee sobre economia", detalhe: "Removida: a escolha entre resultado e 20% é da lei, não nossa", peso: 0, ativo: false },
   { nome: "Float", detalhe: "Removido: conta é do produtor, e conta saiu do MVP", peso: 0, ativo: false },
 ];
@@ -435,7 +469,7 @@ function Dobra() {
           </div>
           <nav className="hidden items-center gap-8 text-[13.5px] text-[#20402f] md:flex">
             <a href="#reforma" className="transition-colors hover:text-[#04130b]">Reforma</a>
-            <a href="#tese" className="transition-colors hover:text-[#04130b]">Tese</a>
+            <a href="#visao" className="transition-colors hover:text-[#04130b]">Visão</a>
             <a href="#concorrencia" className="transition-colors hover:text-[#04130b]">Concorrência</a>
             <a href="#produto" className="transition-colors hover:text-[#04130b]">Produto</a>
             <a href="#plano" className="transition-colors hover:text-[#04130b]">Plano</a>
@@ -620,11 +654,11 @@ function Tese() {
     <Secao id="tese" className="py-24 md:py-32">
       <div className="grid gap-14 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:gap-20">
         <div className="lg:sticky lg:top-24 lg:self-start">
-          <p className="rotulo mb-5">A tese, revista</p>
-          <h2 className="display-2">O que mudou depois de olhar a concorrência.</h2>
+          <p className="rotulo mb-5">A tese</p>
+          <h2 className="display-2">A reforma é a porta. Não é o destino.</h2>
           <p className="mt-5 max-w-[34ch] text-[15px] leading-relaxed text-[--tinta-2]">
-            Cada camada do plano antigo já tinha alguém bem capitalizado. A brecha que sobrou é mais
-            estreita, e é outra.
+            Ela dá um motivo urgente para entrar agora em milhares de fazendas. O que se constrói lá
+            dentro é o que vale.
           </p>
         </div>
 
@@ -662,6 +696,44 @@ function Tese() {
             );
           })}
         </div>
+      </div>
+    </Secao>
+  );
+}
+
+/* ---------------- escada ---------------- */
+
+function Escada() {
+  return (
+    <Secao id="visao" className="py-24 md:py-32">
+      <div className="max-w-[52ch]">
+        <p className="rotulo mb-5">A visão</p>
+        <h2 className="display-2">Quatro degraus, do imposto ao marketplace.</h2>
+        <p className="mt-5 text-[15px] leading-relaxed text-[--tinta-2]">
+          Cada degrau gera o dado e a confiança de que o próximo precisa. Os concorrentes de crédito
+          compram dado de terceiros a cada pedido; a Coope produz o dado todo mês, resolvendo o imposto.
+        </p>
+      </div>
+      <div className="mt-14 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {DEGRAUS.map((d, i) => (
+          <Reveal key={d.n} delay={i * 0.07}>
+            <div
+              className={`flex h-full flex-col justify-between rounded-2xl border p-6 ${
+                i === 0 ? "border-[--acento]/40 bg-[--acento-fundo]" : "border-[--linha] bg-[--fundo-2]"
+              }`}
+            >
+              <div>
+                <p className="mono text-[12px] text-[--acento]">Degrau {d.n}</p>
+                <p className="mt-3 text-[18px] font-semibold tracking-tight">{d.nome}</p>
+                <p className="mt-3 text-[13.5px] leading-relaxed text-[--tinta-2]">{d.corpo}</p>
+              </div>
+              <div className="mt-6 border-t border-[--linha] pt-4">
+                <p className="text-[12.5px] text-[--tinta-2]">{d.paga}</p>
+                <p className="mono mt-1 text-[10.5px] uppercase tracking-[0.14em] text-[--tinta-3]">{d.quando}</p>
+              </div>
+            </div>
+          </Reveal>
+        ))}
       </div>
     </Secao>
   );
@@ -1098,8 +1170,8 @@ function Mercado() {
 
       <Reveal delay={0.2}>
         <p className="mt-6 max-w-[70ch] text-[13.5px] leading-relaxed text-[--tinta-2]">
-          O mercado grande continua sendo o crédito: R$ 402 bilhões por safra já são capital privado. Ele só
-          abre depois que a série mensal existir, e entra como fase 3, por parceiros.
+          O mercado grande é o crédito: R$ 402 bilhões por safra já são capital privado; 1% disso seriam
+          R$ 4 bilhões por ano, em tese. Ele abre no degrau 3, quando a série mensal existir.
         </p>
       </Reveal>
     </Secao>
@@ -1115,8 +1187,8 @@ function Negocio() {
         <div>
           <h2 className="display-2 max-w-[16ch]">Como a plataforma ganha dinheiro.</h2>
           <p className="mt-5 max-w-[44ch] text-[15px] leading-relaxed text-[--tinta-2]">
-            Assinatura paga pelo escritório, por produtor atendido. Duas linhas do plano antigo saíram e
-            uma foi adiada, cada uma com o motivo.
+            Hoje, assinatura paga pelo escritório. Cada degrau seguinte abre uma receita maior: o produtor
+            direto, o crédito originado e o marketplace.
           </p>
 
           <div className="mt-10 space-y-5">
@@ -1355,8 +1427,8 @@ function Fecho() {
             </span>
             <h2 className="display-2 mx-auto mt-6 max-w-[20ch]">O produto está de pé. O que falta é cliente.</h2>
             <p className="mx-auto mt-6 max-w-[54ch] text-[15.5px] leading-relaxed text-[--tinta-2]">
-              Duas semanas, vinte conversas, cinco pilotos manuais. Se os contadores não reconhecerem 2027
-              como problema deles, a gente muda de ideia, e não o slide.
+              Duas semanas, vinte conversas, cinco pilotos manuais para provar a porta de entrada. Depois,
+              degrau por degrau: o produtor sem contador, o motor de crédito e o marketplace.
             </p>
             <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
               <Link href="/contador">
@@ -1407,6 +1479,7 @@ export default function SiteInvestidores() {
       <Sinais />
       <Reforma />
       <Tese />
+      <Escada />
       <Dados />
       <Arquitetura />
       <Produto />

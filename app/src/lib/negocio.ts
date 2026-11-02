@@ -25,6 +25,7 @@ export const METAS = [
   { prazo: "2 semanas", meta: "20 conversas e 5 pilotos manuais", criterio: "3 de 5 contadores dizem que 2027 é problema de capacidade" },
   { prazo: "90 dias", meta: "3 escritórios pagando", criterio: "Cobrança desde o primeiro mês, mesmo que pequena" },
   { prazo: "12 meses", meta: "50 escritórios e 1.500 produtores", criterio: "Churn mensal abaixo de 3%" },
+  { prazo: "Depois", meta: "Produtor sem contador, motor de crédito e marketplace", criterio: "Cada degrau sobre o dado do anterior" },
 ] as const;
 
 export interface Metrica {
@@ -116,10 +117,22 @@ export function fontesReceita(): FonteReceita[] {
       ressalva: "Avulso e sazonal (novembro e dezembro). Fica fora da receita recorrente.",
     },
     {
-      nome: "Indicação de crédito a parceiros",
-      comoGanha: "Comissão paga pelo financiador quando o produtor, com consentimento, leva o histórico mensal a ele.",
+      nome: "Assinatura direta do produtor",
+      comoGanha: "Degrau 2: o produtor resolve sozinho, no app, o que hoje paga ao contador (R$ 1 a 3 mil por mês na pesquisa).",
       valorMes: 0,
-      ressalva: "Fase 3. Só depois de 12 meses de apuração mensal da carteira, e via parceiro regulado.",
+      ressalva: "Depois que a carteira estiver dentro do app. O produtor declara com o próprio certificado; escriturar para terceiros continua com o contador.",
+    },
+    {
+      nome: "Crédito originado",
+      comoGanha: "Degrau 3: 1% a 3% do crédito levado a financiadores com o histórico mensal do produtor.",
+      valorMes: 0,
+      ressalva: "Após 12 meses de série conferida, como correspondente de parceiros regulados.",
+    },
+    {
+      nome: "Marketplace",
+      comoGanha: "Degrau 4: comissão em crédito, insumo, seguro e trava de preço, ordenados pelo custo total.",
+      valorMes: 0,
+      ressalva: "Seguro por corretora ou representante; trava de preço por corretora CVM.",
     },
     {
       nome: "Success fee sobre economia de imposto",

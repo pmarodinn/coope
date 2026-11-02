@@ -7,7 +7,7 @@ import "./globals.css";
 
 const TITULO = "Coope — A reforma tributária do campo, pronta para o contador";
 const DESCRICAO =
-  "Em 2027 a CBS começa a ser cobrada e o produtor pessoa física precisa de CNPJ. A Coope lê as notas da SEFAZ e os extratos do Open Finance e entrega ao escritório a carteira rural conferida, mês a mês.";
+  "A reforma de 2027 é a porta: a Coope entra pelo contador com a carteira rural conferida. O destino é o produtor sem contador, um motor de crédito com dado fiscal mensal e um marketplace do agro.";
 
 export const metadata: Metadata = {
   // Sem isto o Next resolve a imagem contra localhost e a prévia do link
