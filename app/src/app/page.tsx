@@ -167,8 +167,8 @@ const DEGRAUS = [
   {
     n: "3",
     nome: "Motor de crédito",
-    corpo: "Doze meses de vendas, compras, caixa e dívidas conferidos viram score e limite.",
-    paga: "Financiador, por crédito originado",
+    corpo: "Análise, estruturação da garantia e monitoramento: a venda futura vira garantia acompanhada, e o credor é avisado antes do atraso. Primeiro revendas e cooperativas.",
+    paga: "Credor, por crédito originado e monitorado",
     quando: "Após 12 meses de série",
   },
   {
@@ -218,8 +218,8 @@ const OPEN_FINANCE_FASES = [
   },
   {
     fase: "Fase 3",
-    uso: "Histórico levado ao financiador",
-    para: "Consentimento novo para cada parceiro. A portabilidade pelo Open Finance ainda não inclui crédito rural.",
+    uso: "Recebimentos das vendas e dívidas, mês a mês",
+    para: "A venda futura vira garantia acompanhada e o credor é avisado antes do atraso. Consentimento específico para cada credor.",
   },
   {
     fase: "Se houver conta",
