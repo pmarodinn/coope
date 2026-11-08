@@ -280,6 +280,25 @@ export interface Carteira {
 }
 
 /**
+ * 1 é o que trava janeiro (CNPJ de contribuinte, notas autuáveis em série,
+ * certificado vencido); 2 é o que ainda precisa de mão do escritório.
+ */
+export function urgenciaDe(
+  c: Pick<ClienteCarteira, "enquadramento" | "cnpj" | "notasSemCampos" | "decisao" | "extratos"> & {
+    certificado: string;
+  },
+): 1 | 2 | 3 {
+  const grave =
+    (c.enquadramento === "obrigatorio" && c.cnpj === "pendente") ||
+    c.notasSemCampos >= 3 ||
+    c.certificado === "vencido" ||
+    c.certificado === "faltando";
+  const medio =
+    c.decisao === "pendente" || c.notasSemCampos > 0 || c.extratos === "faltando" || c.cnpj === "pendente";
+  return grave ? 1 : medio ? 2 : 3;
+}
+
+/**
  * Doze clientes de um escritório de Sorriso/MT. Todos fictícios. O primeiro é
  * o produtor da demonstração, com os números saídos do motor fiscal; os demais
  * cobrem as situações que o escritório vai encontrar em janeiro.
@@ -474,12 +493,7 @@ export function carteiraDoEscritorio(hoje = new Date()): Carteira {
   const clientes: ClienteCarteira[] = base
     .map((c) => {
       const enquadramento = enquadrar(c.receita);
-      const grave =
-        (enquadramento === "obrigatorio" && c.cnpj === "pendente") ||
-        c.notasSemCampos >= 3 ||
-        c.certificado === "vencido";
-      const medio = c.decisao === "pendente" || c.notasSemCampos > 0 || c.extratos === "faltando" || c.cnpj === "pendente";
-      return { ...c, enquadramento, urgencia: (grave ? 1 : medio ? 2 : 3) as 1 | 2 | 3 };
+      return { ...c, enquadramento, urgencia: urgenciaDe({ ...c, enquadramento }) };
     })
     .sort((x, y) => x.urgencia - y.urgencia || y.receita - x.receita);
 

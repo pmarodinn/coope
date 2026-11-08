@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { instalarApiLocal } from "@/lib/api-local";
 import { LenisScroll } from "./site/lenis-scroll";
+import { PortalContador } from "./contador/portal";
 import { Shell } from "./shell";
 
 // No build estático não há servidor para atender /api/*. A instalação acontece
@@ -26,8 +27,13 @@ export function Chrome({ children }: { children: ReactNode }) {
   // suave, que só pesam e atrapalham num formulário de toques.
   if (path.startsWith("/pesquisa")) return <>{children}</>;
 
+  // O portal do contador é um sistema de computador, no mesmo visual claro do
+  // app do produtor; o convite é a primeira tela do produtor, no celular.
+  if (path.startsWith("/contador")) return <PortalContador>{children}</PortalContador>;
+  if (path.startsWith("/convite")) return <>{children}</>;
+
   // O console é leitura de dado denso: rolagem suave atrapalha a varredura.
-  const ehConsole = path.startsWith("/motor") || path.startsWith("/contador");
+  const ehConsole = path.startsWith("/motor");
 
   return (
     <div className="site-escuro min-h-screen bg-[--fundo] text-[--tinta] antialiased">

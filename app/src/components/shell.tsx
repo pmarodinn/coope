@@ -63,7 +63,7 @@ function Menu() {
           <div className="fixed inset-0 z-40" onClick={() => setAberto(false)} aria-hidden />
           <div className="pop absolute right-0 top-11 z-50 w-56 overflow-hidden rounded-card bg-surface shadow-float">
             {[
-              { href: "/contador", icone: "nota", rotulo: "Painel do contador" },
+              { href: "/contador", icone: "nota", rotulo: "Portal do contador" },
               { href: "/app/reforma", icone: "calendario", rotulo: "Reforma 2027" },
               { href: "/app/seguranca", icone: "escudo", rotulo: "Segurança" },
               { href: "/app/negocio", icone: "credito", rotulo: "Números do negócio" },

@@ -139,6 +139,20 @@ body {
   animation: pop 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+@keyframes gaveta {
+  from {
+    transform: translateX(32px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+.gaveta {
+  animation: gaveta 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* ----------------------------------------------------------------
    Site de investidores. Escopo próprio: o app do produtor é claro e
    utilitário; aqui a leitura é cinematográfica e o acento é único.
