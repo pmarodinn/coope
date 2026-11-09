@@ -286,3 +286,61 @@ body {
     margin: 14mm;
   }
 }
+
+/* ----------------------------------------------------------------
+   Página de captação de contadores (/contadores). Escopo próprio,
+   no verde da marca e na Geist. Segue o tema do aparelho.
+   Raios: cartão 24px, imagem dentro de cartão 16px, campo e opção
+   12px, botão em pílula. Nada fora disso.
+   ---------------------------------------------------------------- */
+.lp {
+  --lp-fundo: #f5f7f3;
+  --lp-superficie: #ffffff;
+  --lp-elevado: #eef2ec;
+  --lp-tinta: #0e1a14;
+  --lp-tinta-2: #46554d;
+  --lp-tinta-3: #5f6e66;
+  --lp-linha: #dfe5dc;
+  --lp-acento: #0b7a49;
+  --lp-acento-forte: #096a3f;
+  --lp-acento-tinta: #ffffff;
+  --lp-acento-suave: #e3f1e8;
+  --lp-erro: #b3261e;
+  --lp-sombra: 0 1px 2px rgba(14, 40, 26, 0.06), 0 12px 32px -16px rgba(14, 40, 26, 0.18);
+
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  background: var(--lp-fundo);
+  color: var(--lp-tinta);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  .lp {
+    --lp-fundo: #0b100d;
+    --lp-superficie: #121915;
+    --lp-elevado: #18211c;
+    --lp-tinta: #edf3ef;
+    --lp-tinta-2: #b0beb6;
+    --lp-tinta-3: #94a49b;
+    --lp-linha: #24302a;
+    --lp-acento: #34c584;
+    --lp-acento-forte: #4fd496;
+    --lp-acento-tinta: #04170d;
+    --lp-acento-suave: #13281d;
+    --lp-erro: #ff8a7a;
+    --lp-sombra: 0 1px 2px rgba(0, 0, 0, 0.4), 0 16px 40px -18px rgba(0, 0, 0, 0.7);
+    color-scheme: dark;
+  }
+}
+
+.lp ::selection {
+  background: var(--lp-acento);
+  color: var(--lp-acento-tinta);
+}
+
+.lp details > summary {
+  list-style: none;
+}
+.lp details > summary::-webkit-details-marker {
+  display: none;
+}

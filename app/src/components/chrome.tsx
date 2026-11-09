@@ -29,7 +29,9 @@ export function Chrome({ children }: { children: ReactNode }) {
 
   // O portal do contador é um sistema de computador, no mesmo visual claro do
   // app do produtor; o convite é a primeira tela do produtor, no celular.
-  if (path.startsWith("/contador")) return <PortalContador>{children}</PortalContador>;
+  // "/contadores" é a página de captação, não o portal.
+  if (path === "/contador" || path.startsWith("/contador/")) return <PortalContador>{children}</PortalContador>;
+  if (path.startsWith("/contadores")) return <>{children}</>;
   if (path.startsWith("/convite")) return <>{children}</>;
 
   // O console é leitura de dado denso: rolagem suave atrapalha a varredura.

@@ -183,8 +183,8 @@ const campoFirestore = (v: string | number) => (typeof v === "number" ? { double
  * reenvia, o banco responde "já existe" e isso conta como enviado, então reenviar
  * nunca duplica.
  */
-export async function enviar(pacote: Pacote): Promise<"ok" | "falhou"> {
-  const { projectId, apiKey, colecao, host } = PESQUISA.firebase;
+export async function enviar(pacote: Pacote, colecao: string = PESQUISA.firebase.colecao): Promise<"ok" | "falhou"> {
+  const { projectId, apiKey, host } = PESQUISA.firebase;
   const url =
     `${host}/v1/projects/${encodeURIComponent(projectId)}/databases/(default)/documents/${colecao}` +
     `?documentId=${encodeURIComponent(pacote.id)}&key=${encodeURIComponent(apiKey)}`;

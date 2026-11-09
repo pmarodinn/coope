@@ -212,7 +212,7 @@ export function conferirRegistro(r: Record<string, unknown>): Conferencia {
  * Ler, alterar e apagar ninguém pode pelo site: os dados pessoais só saem pelo
  * console do Firebase ou pelo script de exportação, com a conta do dono.
  */
-export function gerarRegras(colecao: string): string {
+export function gerarRegras(colecao: string, extras = ""): string {
   const campos = esquema();
   const aspas = (s: string) => `'${s.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
 
@@ -261,7 +261,7 @@ ${grupos
     }`,
   )
   .join("\n")}
-  }
+${extras}  }
 }
 `;
 }

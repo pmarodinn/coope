@@ -8,7 +8,8 @@
     "start": "next start -p 4310",
     "lint": "next lint",
     "regras": "npx --yes tsx scripts/gerar-regras.ts",
-    "exportar": "npx --yes tsx scripts/exportar.ts"
+    "exportar": "npx --yes tsx scripts/exportar.ts",
+    "exportar:contadores": "npx --yes tsx scripts/exportar-contadores.ts"
   },
   "dependencies": {
     "@number-flow/react": "^0.6.2",

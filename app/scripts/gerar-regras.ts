@@ -6,8 +6,9 @@
 import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { PESQUISA } from "../src/lib/pesquisa-config";
+import { gerarRegrasContadores } from "../src/lib/contador-lead";
 import { gerarRegras } from "../src/lib/pesquisa-registro";
 
 const destino = resolve(__dirname, "../../firebase/firestore.rules");
-writeFileSync(destino, gerarRegras(PESQUISA.firebase.colecao));
+writeFileSync(destino, gerarRegras(PESQUISA.firebase.colecao, gerarRegrasContadores()));
 console.log(`Regras escritas em ${destino}`);
