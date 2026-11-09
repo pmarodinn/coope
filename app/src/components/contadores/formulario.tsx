@@ -268,12 +268,14 @@ export function Formulario() {
     setLead({ ...LEAD_VAZIO, ...salvo, aceite: false, origem: salvo.origem || (veioDoInsta ? "instagram" : "") });
   }, []);
 
-  useEffect(() => {
-    if (estado === "preenchendo") gravar(K_RASCUNHO, JSON.stringify({ ...lead, aceite: false }));
-  }, [lead, estado]);
-
+  // O rascunho é gravado a cada alteração feita pela pessoa, nunca na montagem:
+  // gravar no carregamento apagaria o que a pesquisa deixou preenchido.
   const muda = <K extends keyof Lead>(k: K, v: Lead[K]) => {
-    setLead((l) => ({ ...l, [k]: v }));
+    setLead((l) => {
+      const novo = { ...l, [k]: v };
+      gravar(K_RASCUNHO, JSON.stringify({ ...novo, aceite: false }));
+      return novo;
+    });
     if (erros[k]) setErros((e) => ({ ...e, [k]: undefined }));
   };
 

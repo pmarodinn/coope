@@ -188,5 +188,58 @@ service cloud.firestore {
         && d.envio_em is string && d.envio_em.size() == 20 && d.envio_em.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$')
         && d.envio_versao is float && d.envio_versao == 1;
     }
+
+    // Pesquisa com escritórios de contabilidade (/pesquisa-contadores), gerado de
+    // src/lib/pesquisa-contadores.ts. O site só cria, no formato exato.
+    match /pesquisa_contadores/{id} {
+      allow create: if id.matches('^[0-9]{8}T[0-9]{4}-[0-9a-z]{6}$') && pcValido(request.resource.data);
+      allow read, update, delete: if false;
+    }
+
+    function pcValido(d) {
+      return d.size() == 25
+        && d.keys().hasOnly(['contato_nome', 'contato_celular', 'contato_aceite', 'p01_uf', 'p02_equipe', 'p03_clientes', 'p04_areas', 'p05_produtores', 'p06_acima36', 'p07_tempo', 'p08_notas', 'p09_extratos', 'p10_sistema', 'p11_ferramentas', 'p12_gasto', 'p13_crescer', 'p14_como_crescer', 'p15_trava', 'p16_honorario_rural', 'p17_reforma_feito', 'p18_reforma_preocupa', 'utm_source', 'utm_content', 'envio_em', 'envio_versao'])
+        && pcGrupo1(d)
+        && pcGrupo2(d)
+        && pcGrupo3(d)
+        && pcGrupo4(d);
+    }
+
+    function pcGrupo1(d) {
+      return d.contato_nome is string && d.contato_nome.size() >= 2 && d.contato_nome.size() <= 60
+        && d.contato_celular is string && d.contato_celular.size() == 14 && d.contato_celular.matches('^\\+55[0-9]{11}$')
+        && d.contato_aceite is string && d.contato_aceite in ['sim']
+        && d.p01_uf is string && d.p01_uf in ['mt', 'ms', 'go', 'pr', 'rs', 'sp', 'mg', 'ba', 'sc', 'to', 'ma', 'pi', 'pa', 'ro', 'outro']
+        && d.p02_equipe is string && d.p02_equipe in ['1', '2a5', '6a15', '16a40', 'mais40']
+        && d.p03_clientes is string && d.p03_clientes in ['ate30', '31a100', '101a300', '301a800', 'mais800']
+        && d.p04_areas is string && d.p04_areas.size() <= 300 && d.p04_areas.matches('^(produtor|empresa_agro|comercio|servicos|industria|construcao|pessoa_fisica|terceiro_setor|outros)(;(produtor|empresa_agro|comercio|servicos|industria|construcao|pessoa_fisica|terceiro_setor|outros))*$')
+        && d.p05_produtores is string && d.p05_produtores in ['nenhum', 'ate10', '11a30', '31a100', 'mais100'];
+    }
+
+    function pcGrupo2(d) {
+      return d.p06_acima36 is string && d.p06_acima36 in ['sem_produtor', 'nenhum', '1a5', '6a15', 'mais15', 'nao_sabe']
+        && d.p07_tempo is string && d.p07_tempo.size() <= 300 && d.p07_tempo.matches('^(cobrar_docs|lancar_notas|conciliar|apurar|acessorias|folha|atender|retrabalho)(;(cobrar_docs|lancar_notas|conciliar|apurar|acessorias|folha|atender|retrabalho))*$')
+        && d.p08_notas is string && d.p08_notas in ['cliente_manda', 'portal_sefaz', 'automatico', 'misto']
+        && d.p09_extratos is string && d.p09_extratos in ['pdf_whats', 'ofx', 'acesso_banco', 'automatico', 'nao_mandam']
+        && d.p10_sistema is string && d.p10_sistema in ['dominio', 'alterdata', 'questor', 'fortes', 'sci', 'contmatic', 'mastermaq', 'prosoft', 'nasajon', 'proprio', 'outro']
+        && d.p11_ferramentas is string && d.p11_ferramentas.size() <= 300 && d.p11_ferramentas.matches('^(captura_notas|conciliacao|portal_cliente|atendimento|tarefas|rural|ia|planilhas|nenhuma)(;(captura_notas|conciliacao|portal_cliente|atendimento|tarefas|rural|ia|planilhas|nenhuma))*$')
+        && d.p12_gasto is string && d.p12_gasto in ['ate500', '500a2000', '2a5mil', '5a15mil', 'mais15mil', 'nao_sabe']
+        && d.p13_crescer is string && d.p13_crescer in ['bastante', 'pouco', 'manter', 'enxugar'];
+    }
+
+    function pcGrupo3(d) {
+      return d.p14_como_crescer is string && d.p14_como_crescer.size() <= 300 && d.p14_como_crescer.matches('^(indicacao|parcerias|redes|google|eventos|novo_servico|aquisicao|nao_busca)(;(indicacao|parcerias|redes|google|eventos|novo_servico|aquisicao|nao_busca))*$')
+        && d.p15_trava is string && d.p15_trava.size() <= 300 && d.p15_trava.matches('^(gente|rotina|preco|concorrencia|desorganizado|vender|nada)(;(gente|rotina|preco|concorrencia|desorganizado|vender|nada))*$')
+        && d.p16_honorario_rural is string && d.p16_honorario_rural in ['sem_produtor', 'ate300', '300a800', '800a1500', '1500a3000', 'mais3000']
+        && d.p17_reforma_feito is string && d.p17_reforma_feito.size() <= 300 && d.p17_reforma_feito.matches('^(curso|mapeou|conversou|emissor|cnpj|honorarios|nada)(;(curso|mapeou|conversou|emissor|cnpj|honorarios|nada))*$')
+        && d.p18_reforma_preocupa is string && d.p18_reforma_preocupa.size() <= 300 && d.p18_reforma_preocupa.matches('^(volume|cobrar|notas_erradas|sistemas|regras|responsabilidade|tranquilo)(;(volume|cobrar|notas_erradas|sistemas|regras|responsabilidade|tranquilo))*$')
+        && d.utm_source is string && d.utm_source.size() >= 0 && d.utm_source.size() <= 80 && d.utm_source.matches('^[A-Za-z0-9 _.:/+-]*$')
+        && d.utm_content is string && d.utm_content.size() >= 0 && d.utm_content.size() <= 80 && d.utm_content.matches('^[A-Za-z0-9 _.:/+-]*$')
+        && d.envio_em is string && d.envio_em.size() == 20 && d.envio_em.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$');
+    }
+
+    function pcGrupo4(d) {
+      return d.envio_versao is float && d.envio_versao == 1;
+    }
   }
 }
